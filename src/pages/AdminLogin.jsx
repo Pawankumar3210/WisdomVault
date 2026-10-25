@@ -94,7 +94,7 @@ export default function AdminLogin() {
         width: "100%",
         maxWidth: 400,
         marginTop: "40px",
-        background: isLight ? "rgba(253, 251, 247, 0.95)" : "rgba(0,240,255,0.03)",
+        background: isLight ? "rgba(250, 243, 224, 0.96)" : "rgba(0,240,255,0.03)",
         border: isLight ? "1px solid rgba(2, 132, 199, 0.25)" : "1px solid rgba(0,240,255,0.2)",
         borderRadius: 20,
         padding: 36,
@@ -175,7 +175,7 @@ export default function AdminLogin() {
               style={{
                 width: "100%",
                 padding: "12px 16px",
-                background: isLight ? "rgba(255, 255, 255, 0.95)" : "rgba(0,240,255,0.05)",
+                background: isLight ? "rgba(244, 235, 206, 0.95)" : "rgba(0,240,255,0.05)",
                 border: isLight ? "1px solid rgba(2, 132, 199, 0.3)" : "1px solid rgba(0,240,255,0.2)",
                 borderRadius: 10,
                 color: isLight ? "#1e293b" : "#e0f0ff",
@@ -213,7 +213,7 @@ export default function AdminLogin() {
               style={{
                 width: "100%",
                 padding: "12px 16px",
-                background: isLight ? "rgba(255, 255, 255, 0.95)" : "rgba(0,240,255,0.05)",
+                background: isLight ? "rgba(244, 235, 206, 0.95)" : "rgba(0,240,255,0.05)",
                 border: isLight ? "1px solid rgba(2, 132, 199, 0.3)" : "1px solid rgba(0,240,255,0.2)",
                 borderRadius: 10,
                 color: isLight ? "#1e293b" : "#e0f0ff",

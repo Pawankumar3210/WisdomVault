@@ -108,7 +108,7 @@ export default function Footer() {
               width: "100%",
               maxWidth: 400,
               background: isLight
-                ? "linear-gradient(135deg, rgba(253, 251, 247, 0.98), rgba(246, 242, 235, 0.98))"
+                ? "linear-gradient(135deg, rgba(250, 243, 224, 0.98), rgba(244, 235, 206, 0.98))"
                 : "linear-gradient(135deg, rgba(8,8,30,0.98), rgba(4,4,20,0.98))",
               border: isLight ? "1px solid rgba(2, 132, 199, 0.3)" : "1px solid rgba(0,240,255,0.25)",
               borderRadius: 20,
@@ -180,7 +180,7 @@ export default function Footer() {
                   boxShadow: isLight
                     ? "0 4px 20px rgba(2, 132, 199, 0.15)"
                     : "0 0 22px rgba(0,240,255,0.22), 0 0 45px rgba(168,85,247,0.16)",
-                  background: isLight ? "#FDFBF7" : "rgba(255,255,255,0.03)",
+                  background: isLight ? "#FAF3E0" : "rgba(255,255,255,0.03)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -387,7 +387,7 @@ export default function Footer() {
               width: "100%",
               maxWidth: 320,
               background: isLight
-                ? "linear-gradient(135deg, rgba(253, 251, 247, 0.98), rgba(246, 242, 235, 0.98))"
+                ? "linear-gradient(135deg, rgba(250, 243, 224, 0.98), rgba(244, 235, 206, 0.98))"
                 : "linear-gradient(135deg, rgba(8,8,30,0.98), rgba(4,4,20,0.98))",
               border: isLight ? "1px solid rgba(217, 119, 6, 0.35)" : "1px solid rgba(251, 191, 36, 0.3)",
               borderRadius: 20,
@@ -548,7 +548,7 @@ export default function Footer() {
           position: "relative",
           zIndex: 10,
           borderTop: isLight ? "1px solid rgba(2, 132, 199, 0.18)" : "1px solid rgba(0,240,255,0.08)",
-          background: isLight ? "rgba(253, 251, 247, 0.95)" : "rgba(4,4,16,0.9)",
+          background: isLight ? "rgba(250, 243, 224, 0.95)" : "rgba(4,4,16,0.9)",
           backdropFilter: "blur(20px)",
           padding: "16px 20px",
           textAlign: "center",

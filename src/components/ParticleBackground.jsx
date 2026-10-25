@@ -79,7 +79,7 @@ export default function SpaceBackground() {
       const light = isLightRef.current;
 
       // Background clear
-      ctx.fillStyle = light ? "#FDFBF7" : "#05080f";
+      ctx.fillStyle = light ? "#FAF3E0" : "#05080f";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // 1. Draw Nebula (drifts slowly)
@@ -90,8 +90,8 @@ export default function SpaceBackground() {
       );
       if (light) {
         gradient.addColorStop(0, nebula.colorLight);
-        gradient.addColorStop(0.5, "rgba(245, 240, 230, 0.04)");
-        gradient.addColorStop(1, "rgba(253, 251, 247, 0)");
+        gradient.addColorStop(0.5, "rgba(240, 230, 200, 0.05)");
+        gradient.addColorStop(1, "rgba(250, 243, 224, 0)");
       } else {
         gradient.addColorStop(0, nebula.colorDark);
         gradient.addColorStop(0.4, "rgba(0, 240, 255, 0.01)");
@@ -237,7 +237,7 @@ export default function SpaceBackground() {
         height: "100%",
         zIndex: 0,
         pointerEvents: "none",
-        background: activeIsLight ? "#FDFBF7" : "#05080f",
+        background: activeIsLight ? "#FAF3E0" : "#05080f",
         transition: "background 0.3s ease",
       }}
     />

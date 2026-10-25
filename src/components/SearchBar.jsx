@@ -152,7 +152,7 @@ export default function SearchBar() {
           style={{
             width: "100%",
             padding: "16px 16px 16px 48px",
-            background: isLight ? "rgba(255, 255, 255, 0.95)" : "rgba(0,240,255,0.05)",
+            background: isLight ? "rgba(244, 235, 206, 0.95)" : "rgba(0,240,255,0.05)",
             border: isLight ? "1px solid rgba(2, 132, 199, 0.35)" : "1px solid rgba(0,240,255,0.3)",
             borderRadius: 12,
             color: isLight ? "#1e293b" : "#e0f0ff",
@@ -192,7 +192,7 @@ export default function SearchBar() {
             left: 0,
             right: 0,
             zIndex: 1000,
-            background: isLight ? "rgba(253, 251, 247, 0.98)" : "rgba(8,8,30,0.97)",
+            background: isLight ? "rgba(247, 239, 218, 0.98)" : "rgba(8,8,30,0.97)",
             border: isLight ? "1px solid rgba(2,132,199,0.25)" : "1px solid rgba(0,240,255,0.25)",
             borderRadius: 12,
             backdropFilter: "blur(20px)",

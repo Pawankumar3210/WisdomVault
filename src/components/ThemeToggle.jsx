@@ -32,7 +32,7 @@ export default function ThemeToggle({ className = "", style = {} }) {
           ? "1.5px solid rgba(2, 132, 199, 0.35)"
           : "1.5px solid rgba(0, 240, 255, 0.35)",
         background: isLight
-          ? "linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(246, 242, 235, 0.95))"
+          ? "linear-gradient(135deg, rgba(250, 243, 224, 0.98), rgba(244, 235, 206, 0.95))"
           : "linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(8, 20, 45, 0.9))",
         boxShadow: isLight
           ? "0 2px 10px rgba(2, 132, 199, 0.15), 0 0 10px rgba(217, 119, 6, 0.12)"

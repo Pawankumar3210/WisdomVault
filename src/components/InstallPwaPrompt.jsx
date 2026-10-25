@@ -92,7 +92,7 @@ export default function InstallPwaPrompt() {
         width: "calc(100% - 32px)",
         maxWidth: 420,
         background: isLight
-          ? "rgba(253, 251, 247, 0.98)"
+          ? "rgba(250, 243, 224, 0.98)"
           : "rgba(10, 14, 30, 0.96)",
         backdropFilter: "blur(20px)",
         border: isLight

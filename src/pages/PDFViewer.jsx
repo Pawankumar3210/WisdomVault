@@ -87,7 +87,7 @@ export default function PDFViewer() {
 
       {/* TOP BAR */}
       <div style={{
-        background: isLight ? "rgba(253, 251, 247, 0.95)" : "rgba(8,8,24,0.9)",
+        background: isLight ? "rgba(250, 243, 224, 0.95)" : "rgba(8,8,24,0.9)",
         backdropFilter: "blur(20px)",
         borderBottom: isLight ? "1px solid rgba(2, 132, 199, 0.18)" : "1px solid rgba(0,240,255,0.15)",
         boxShadow: isLight ? "0 2px 10px rgba(0,0,0,0.04)" : "none",
@@ -185,7 +185,7 @@ export default function PDFViewer() {
       <div style={{
         width: "100%",
         height: "calc(100vh - 70px)",
-        background: isLight ? "#F3EFEA" : "#1a1a2e",
+        background: isLight ? "#EFE2C5" : "#1a1a2e",
         transition: "background 0.3s ease",
       }}>
         <iframe

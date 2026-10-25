@@ -17,13 +17,13 @@ html {
 
 [data-theme="light"],
 body.light-mode {
-  --bg-main: #FDFBF7;
-  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-main: #FAF3E0;
+  --bg-card: rgba(244, 235, 206, 0.95);
   --border-card: rgba(2, 132, 199, 0.22);
   --text-main: #1e293b;
   --text-muted: #64748b;
   --accent-cyan: #0284c7;
-  --header-bg: rgba(253, 251, 247, 0.94);
+  --header-bg: rgba(250, 243, 224, 0.94);
   --header-border: rgba(2, 132, 199, 0.2);
 }
 
@@ -43,7 +43,7 @@ body {
 }
 
 body.light-mode {
-  background: #FDFBF7;
+  background: #FAF3E0;
   color: #1e293b;
 }
 
@@ -74,7 +74,7 @@ button {
 }
 
 body.light-mode ::-webkit-scrollbar-track {
-  background: #F3EFEA;
+  background: #EFE2C5;
 }
 
 body.light-mode ::-webkit-scrollbar-thumb {
@@ -114,6 +114,7 @@ body.light-mode ::selection {
 .wv-header-brand-text {
   display: flex;
   align-items: center;
+  gap: 10px;
   font-size: 22px;
   font-weight: 800;
   letter-spacing: 1.5px;
@@ -127,7 +128,7 @@ body.light-mode ::selection {
 }
 
 .wv-brand-space {
-  display: inline;
+  display: none;
 }
 
 @media (max-width: 640px) {
@@ -136,12 +137,9 @@ body.light-mode ::selection {
     flex-direction: column !important;
     align-items: flex-start !important;
     justify-content: center !important;
-    line-height: 1.08 !important;
+    gap: 4px !important;
+    line-height: 1.15 !important;
     white-space: nowrap !important;
-  }
-
-  .wv-brand-space {
-    display: none !important;
   }
 
   .wv-brand-wisdom,
@@ -170,6 +168,10 @@ body.light-mode ::selection {
 }
 
 @media (max-width: 380px) {
+  .wv-header-brand-text {
+    gap: 3px !important;
+  }
+
   .wv-brand-wisdom,
   .wv-brand-vault {
     font-size: 13.5px !important;

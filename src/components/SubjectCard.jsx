@@ -34,7 +34,7 @@ export default function SubjectCard({ subject, contents }) {
   return (
     <div 
       style={{
-        background: isLight ? "rgba(255, 255, 255, 0.95)" : "rgba(0,240,255,0.03)",
+        background: isLight ? "rgba(244, 235, 206, 0.95)" : "rgba(0,240,255,0.03)",
         border: `1px solid ${defaultBorder}`,
         borderRadius: 16,
         padding: expanded ? 24 : 20,
@@ -159,7 +159,7 @@ export default function SubjectCard({ subject, contents }) {
                 {section.items.map((item) => (
                   <div key={item.id} style={{
                     padding: "16px 18px",
-                    background: isLight ? "rgba(247, 244, 238, 0.9)" : "rgba(255,255,255,0.03)",
+                    background: isLight ? "rgba(238, 227, 196, 0.9)" : "rgba(255,255,255,0.03)",
                     border: isLight ? "1px solid rgba(2, 132, 199, 0.15)" : "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 12,
                     marginBottom: 10,

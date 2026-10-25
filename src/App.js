@@ -47,7 +47,7 @@ function MainLayout() {
     <div
       style={{
         minHeight: "100vh",
-        background: activeIsLight ? "#FDFBF7" : "#080818",
+        background: activeIsLight ? "#FAF3E0" : "#080818",
         color: activeIsLight ? "#1e293b" : "#e0f0ff",
         fontFamily: "'Inter', sans-serif",
         transition: "background 0.3s ease, color 0.3s ease",

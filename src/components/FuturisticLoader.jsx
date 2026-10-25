@@ -10,7 +10,7 @@ export default function FuturisticLoader({ text = "LOADING" }) {
     <div style={{
       position: "fixed",
       inset: 0,
-      background: isLight ? "rgba(253, 251, 247, 0.97)" : "#0a0a1f",
+      background: isLight ? "rgba(250, 243, 224, 0.97)" : "#0a0a1f",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",

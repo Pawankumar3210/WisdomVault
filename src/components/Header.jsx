@@ -18,7 +18,7 @@ export default function Header() {
         position: "sticky",
         top: 0,
         zIndex: 100,
-        background: isLight ? "rgba(253, 251, 247, 0.94)" : "rgba(8, 8, 24, 0.88)",
+        background: isLight ? "rgba(250, 243, 224, 0.94)" : "rgba(8, 8, 24, 0.88)",
         backdropFilter: "blur(20px)",
         borderBottom: isLight
           ? "1px solid rgba(2, 132, 199, 0.2)"

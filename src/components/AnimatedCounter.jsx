@@ -63,7 +63,7 @@ export default function AnimatedCounter({ target, color, label }) {
         alignItems: "center",
         gap: 8,
         padding: "10px 20px",
-        background: isLight ? "rgba(255, 255, 255, 0.95)" : "rgba(255, 255, 255, 0.03)",
+        background: isLight ? "rgba(244, 235, 206, 0.95)" : "rgba(255, 255, 255, 0.03)",
         border: isLight ? `1px solid ${color}40` : `1px solid ${color}25`,
         borderRadius: 10,
         backdropFilter: "blur(10px)",
