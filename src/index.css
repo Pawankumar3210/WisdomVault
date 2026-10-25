@@ -15,7 +15,8 @@ html {
   --header-border: rgba(0, 240, 255, 0.15);
 }
 
-[data-theme="light"], body.light-mode {
+[data-theme="light"],
+body.light-mode {
   --bg-main: #FDFBF7;
   --bg-card: rgba(255, 255, 255, 0.95);
   --border-card: rgba(2, 132, 199, 0.22);
@@ -26,7 +27,11 @@ html {
   --header-border: rgba(2, 132, 199, 0.2);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 body {
   font-family: 'Inter', sans-serif;
@@ -42,31 +47,65 @@ body.light-mode {
   color: #1e293b;
 }
 
-input, select, textarea, button {
+input,
+select,
+textarea,
+button {
   font-family: 'Inter', sans-serif;
 }
 
 /* Custom Scrollbars */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #080818; }
-::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.25); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.45); }
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
 
-body.light-mode ::-webkit-scrollbar-track { background: #F3EFEA; }
-body.light-mode ::-webkit-scrollbar-thumb { background: rgba(2, 132, 199, 0.35); border-radius: 3px; }
-body.light-mode ::-webkit-scrollbar-thumb:hover { background: rgba(2, 132, 199, 0.55); }
+::-webkit-scrollbar-track {
+  background: #080818;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.25);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 240, 255, 0.45);
+}
+
+body.light-mode ::-webkit-scrollbar-track {
+  background: #F3EFEA;
+}
+
+body.light-mode ::-webkit-scrollbar-thumb {
+  background: rgba(2, 132, 199, 0.35);
+  border-radius: 3px;
+}
+
+body.light-mode ::-webkit-scrollbar-thumb:hover {
+  background: rgba(2, 132, 199, 0.55);
+}
 
 /* Selection */
-::selection { background: rgba(0, 240, 255, 0.25); color: #fff; }
-body.light-mode ::selection { background: rgba(2, 132, 199, 0.25); color: #1e293b; }
+::selection {
+  background: rgba(0, 240, 255, 0.25);
+  color: #fff;
+}
+
+body.light-mode ::selection {
+  background: rgba(2, 132, 199, 0.25);
+  color: #1e293b;
+}
 
 /* Micro-animations and responsive rules */
 .wv-theme-toggle {
   transition: transform 0.25s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
+
 .wv-theme-toggle:hover {
   transform: scale(1.08);
 }
+
 .wv-theme-toggle:active {
   transform: scale(0.92);
 }
@@ -75,10 +114,16 @@ body.light-mode ::selection { background: rgba(2, 132, 199, 0.25); color: #1e293
 .wv-header-brand-text {
   display: flex;
   align-items: center;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   letter-spacing: 1.5px;
   white-space: nowrap;
+}
+
+.wv-brand-word {
+  display: inline-block;
+  font-weight: 800;
+  font-size: inherit;
 }
 
 .wv-brand-space {
@@ -91,32 +136,33 @@ body.light-mode ::selection { background: rgba(2, 132, 199, 0.25); color: #1e293
     flex-direction: column !important;
     align-items: flex-start !important;
     justify-content: center !important;
-    line-height: 1.05 !important;
+    line-height: 1.08 !important;
     white-space: nowrap !important;
   }
+
   .wv-brand-space {
     display: none !important;
   }
-  .wv-brand-wisdom {
-    font-size: 13px !important;
+
+  .wv-brand-wisdom,
+  .wv-brand-vault {
+    font-size: 15px !important;
     font-weight: 800 !important;
     letter-spacing: 1px !important;
+    opacity: 1 !important;
   }
-  .wv-brand-vault {
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    letter-spacing: 1.6px !important;
-    opacity: 0.92;
-  }
+
   .wv-header-logo-img {
     width: 36px !important;
     height: 36px !important;
   }
+
   .wv-admin-btn {
     padding: 6px 11px !important;
     font-size: 11px !important;
     letter-spacing: 0.5px !important;
   }
+
   .wv-theme-toggle {
     width: 36px !important;
     height: 36px !important;
@@ -124,22 +170,24 @@ body.light-mode ::selection { background: rgba(2, 132, 199, 0.25); color: #1e293
 }
 
 @media (max-width: 380px) {
-  .wv-brand-wisdom {
-    font-size: 11.5px !important;
-    letter-spacing: 0.8px !important;
-  }
+  .wv-brand-wisdom,
   .wv-brand-vault {
-    font-size: 10px !important;
-    letter-spacing: 1.2px !important;
+    font-size: 13.5px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.8px !important;
+    opacity: 1 !important;
   }
+
   .wv-header-logo-img {
     width: 32px !important;
     height: 32px !important;
   }
+
   .wv-admin-btn {
     padding: 5px 8px !important;
     font-size: 10.5px !important;
   }
+
   .wv-theme-toggle {
     width: 32px !important;
     height: 32px !important;
@@ -150,6 +198,7 @@ body.light-mode ::selection { background: rgba(2, 132, 199, 0.25); color: #1e293
   .wv-admin-full {
     display: none !important;
   }
+
   .wv-admin-short {
     display: inline !important;
   }
