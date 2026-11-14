@@ -149,7 +149,7 @@ export default function InstallPwaPrompt() {
           >
             {showIOSGuide
               ? "Tap Share (⎋) below then 'Add to Home Screen' (+)"
-              : "Access notes & question banks offline anytime with 1-tap"}
+              : "Access notes & question banks quickly anytime with 1-tap"}
           </div>
         </div>
 

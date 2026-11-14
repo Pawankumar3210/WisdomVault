@@ -8,11 +8,12 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import PDFViewer from "./pages/PDFViewer";
 import InstallPwaPrompt from "./components/InstallPwaPrompt";
+import { useSession } from "./lib/useSession";
 
 function ProtectedRoute({ children }) {
-  return localStorage.getItem("wv_admin") === "true"
-    ? children
-    : <Navigate to="/admin/login" />;
+  const session = useSession();
+  if (session === undefined) return null;
+  return session ? children : <Navigate to="/admin/login" />;
 }
 
 function MainLayout() {

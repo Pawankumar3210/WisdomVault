@@ -27,10 +27,6 @@ export default function AdminDashboard() {
   const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem("wv_admin") !== "true") {
-      navigate("/admin/login");
-      return;
-    }
     fetchAll();
 
     // Hide welcome message after 4.5 seconds
@@ -60,14 +56,10 @@ export default function AdminDashboard() {
     setLoading(false);
   };
 
-  const handleLogout = () => {
-    setShowLogoutMsg(true);
-    
-    setTimeout(() => {
-      localStorage.removeItem("wv_admin");
-      navigate("/?logout=true");
-    }, 1600);
-  };
+  const handleLogout = async () => {
+  await supabase.auth.signOut();
+  navigate("/?logout=true");
+};
 
   // ── SUBJECTS ──
   const saveSubject = async () => {
@@ -83,10 +75,11 @@ export default function AdminDashboard() {
   };
 
   const deleteSubject = async (id) => {
-    await supabase.from("subjects").delete().eq("id", id);
-    setConfirmDelete(null);
-    fetchAll();
-  };
+  const { error } = await supabase.from("subjects").delete().eq("id", id);
+  if (error) { alert(error.message); return; }
+  setConfirmDelete(null);
+  fetchAll();
+};
 
   // ── CONTENT ──
   const saveContent = async () => {
@@ -142,10 +135,11 @@ export default function AdminDashboard() {
   };
 
   const deleteContent = async (id) => {
-    await supabase.from("content").delete().eq("id", id);
-    setConfirmDelete(null);
-    fetchAll();
-  };
+  const { error } = await supabase.from("content").delete().eq("id", id);
+  if (error) { alert(error.message); return; }
+  setConfirmDelete(null);
+  fetchAll();
+};
 
   const inputStyle = {
     width: "100%", padding: "11px 14px",

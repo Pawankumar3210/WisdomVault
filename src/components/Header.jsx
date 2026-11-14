@@ -1,16 +1,18 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import ThemeToggle from "./ThemeToggle";
+import { useSession } from "../lib/useSession";
+import { supabase } from "../lib/supabase";
 
 export default function Header() {
   const navigate = useNavigate();
   const { isLight } = useTheme();
-  const isAdmin = localStorage.getItem("wv_admin") === "true";
-
-  const handleLogout = () => {
-    localStorage.removeItem("wv_admin");
-    navigate("/");
-  };
+  const session = useSession();
+  const isAdmin = !!session;
+  const handleLogout = async () => {
+  await supabase.auth.signOut();
+  navigate("/?logout=true");
+};
 
   return (
     <header
