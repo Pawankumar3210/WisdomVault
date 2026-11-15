@@ -56,7 +56,7 @@ export default function PDFViewer() {
     if (window.history.state && window.history.state.idx > 0) {
       navigate(-1);
     } else if (content?.subject_id) {
-      navigate(`/?open=${content.subject_id}`, { replace: true });
+      navigate(`/?subject=${content.subject_id}`, { replace: true });
     } else {
       navigate("/", { replace: true });
     }

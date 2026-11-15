@@ -36,8 +36,8 @@ export default function Home() {
 
   const handleExpand = (subjectId) => {
     const next = new URLSearchParams(searchParams);
-    next.delete("subject");
-    next.set("open", subjectId);
+    next.delete("open");
+    next.set("subject", subjectId);
     setSearchParams(next);
   };
 
@@ -63,8 +63,8 @@ export default function Home() {
     setLoading(false);
   };
 
-  const filteredSubjects = filterSubject
-    ? subjects.filter(s => s.id === filterSubject)
+  const filteredSubjects = expandedSubjectId
+    ? subjects.filter(s => s.id === expandedSubjectId)
     : subjects;
 
   return (
@@ -236,7 +236,10 @@ export default function Home() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                gridTemplateColumns: expandedSubjectId
+                  ? "minmax(280px, 640px)"
+                  : "repeat(auto-fill, minmax(280px, 1fr))",
+                justifyContent: expandedSubjectId ? "center" : "stretch",
                 gap: 20,
               }}
             >
