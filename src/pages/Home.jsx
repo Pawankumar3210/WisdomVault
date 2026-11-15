@@ -14,13 +14,39 @@ export default function Home() {
   const [subjects, setSubjects] = useState([]);
   const [contents, setContents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const filterSubject = searchParams.get("subject");
+  const openSubject = searchParams.get("open");
+  const expandedSubjectId = filterSubject || openSubject;
   const { isLight } = useTheme();
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (loading || !expandedSubjectId) return;
+    const card = document.getElementById(`subject-card-${expandedSubjectId}`);
+    if (card) {
+      requestAnimationFrame(() =>
+        card.scrollIntoView({ behavior: "auto", block: "start" })
+      );
+    }
+  }, [loading, expandedSubjectId]);
+
+  const handleExpand = (subjectId) => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("subject");
+    next.set("open", subjectId);
+    setSearchParams(next);
+  };
+
+  const handleCollapse = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("subject");
+    next.delete("open");
+    setSearchParams(next, { replace: true });
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -219,6 +245,9 @@ export default function Home() {
                   key={subject.id}
                   subject={subject}
                   contents={contents.filter(c => c.subject_id === subject.id)}
+                  expanded={expandedSubjectId === subject.id}
+                  onExpand={() => handleExpand(subject.id)}
+                  onCollapse={handleCollapse}
                 />
               ))}
             </div>

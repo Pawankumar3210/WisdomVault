@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 
-export default function SubjectCard({ subject, contents }) {
+export default function SubjectCard({ subject, contents, expanded, onExpand, onCollapse }) {
   const navigate = useNavigate();
-  const [expanded, setExpanded] = useState(false);
   const { isLight } = useTheme();
 
   const notes = contents?.filter(c => c.type === "note") || [];
@@ -12,12 +10,12 @@ export default function SubjectCard({ subject, contents }) {
   const papers = contents?.filter(c => c.type === "paper") || [];
 
   const handleCardClick = () => {
-    if (!expanded) setExpanded(true);
+    if (!expanded) onExpand?.();
   };
 
   const handleBack = (e) => {
     e.stopPropagation();
-    setExpanded(false);
+    onCollapse?.();
   };
 
   const stats = [
@@ -33,6 +31,7 @@ export default function SubjectCard({ subject, contents }) {
 
   return (
     <div 
+      id={`subject-card-${subject.id}`}
       style={{
         background: isLight ? "rgba(244, 235, 206, 0.95)" : "rgba(0,240,255,0.03)",
         border: `1px solid ${defaultBorder}`,
@@ -44,6 +43,7 @@ export default function SubjectCard({ subject, contents }) {
         cursor: expanded ? "default" : "pointer",
         position: "relative",
         overflow: "hidden",
+        scrollMarginTop: 84,
       }}
       onClick={!expanded ? handleCardClick : undefined}
       onMouseEnter={e => {

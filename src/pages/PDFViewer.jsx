@@ -52,6 +52,16 @@ export default function PDFViewer() {
     return type ? type.toUpperCase() : "";
   };
 
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else if (content?.subject_id) {
+      navigate(`/?open=${content.subject_id}`, { replace: true });
+    } else {
+      navigate("/", { replace: true });
+    }
+  };
+
   if (loading) return <FuturisticLoader text="LOADING DOCUMENT" />;
 
   if (error) return (
@@ -98,7 +108,7 @@ export default function PDFViewer() {
         position: "sticky", top: 0, zIndex: 10,
         transition: "background 0.3s ease, border-color 0.3s ease",
       }}>
-        <button onClick={() => navigate(-1)} style={{
+        <button onClick={handleBack} style={{
           display: "flex", alignItems: "center", gap: 6,
           padding: "8px 14px",
           background: isLight ? "rgba(2,132,199,0.08)" : "rgba(0,240,255,0.06)",
