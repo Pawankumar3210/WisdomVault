@@ -57,27 +57,47 @@ export default function AdminLogin() {
       display: "flex",
       padding: 20,
     }}>
-      <button onClick={() => navigate("/")} className="wv-action-btn" style={{
-        position: "absolute", top: 20, left: 20,
-        display: "flex", alignItems: "center", gap: 6,
-        background: "transparent", border: "none",
-        color: "rgba(0,240,255,0.5)", cursor: "pointer",
-        fontSize: 12, fontFamily: "'Orbitron', sans-serif",
-        letterSpacing: 1, padding: 0,
-      }}>
-        ← BACK TO HOME
-      </button>
-
-      <div className="wv-scale-in" style={{
-        width: "100%", maxWidth: 400,
+      <div style={{
+        width: "100%",
+        maxWidth: 400,
         margin: "auto",
-        background: "rgba(0,240,255,0.03)",
-        border: "1px solid rgba(0,240,255,0.2)",
-        borderRadius: 20, padding: 36,
-        backdropFilter: "blur(20px)",
-        boxShadow: "0 0 40px rgba(0,240,255,0.08)",
-        position: "relative", overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 16,
       }}>
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="wv-admin-back wv-action-btn"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            background: "rgba(239, 68, 68, 0.08)",
+            border: "1px solid rgba(248, 113, 113, 0.45)",
+            borderRadius: 50,
+            color: "#f87171",
+            cursor: "pointer",
+            fontFamily: "'Orbitron', sans-serif",
+            fontSize: 11,
+            letterSpacing: 1.5,
+            padding: "9px 18px",
+            transition: "all 0.2s ease",
+          }}
+        >
+          ← BACK TO HOME
+        </button>
+
+        <div className="wv-scale-in" style={{
+          width: "100%",
+          background: "rgba(0,240,255,0.03)",
+          border: "1px solid rgba(0,240,255,0.2)",
+          borderRadius: 20, padding: 36,
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 0 40px rgba(0,240,255,0.08)",
+          position: "relative", overflow: "hidden",
+        }}>
         <div style={{
           position: "absolute", top: 0, left: 0, right: 0, height: 1,
           background: "linear-gradient(90deg, transparent, #00f0ff, transparent)",
@@ -184,7 +204,20 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <style>{`input::placeholder { color: rgba(255,255,255,0.2); }`}</style>
+        <style>{`
+          input::placeholder { color: rgba(255,255,255,0.2); }
+          .wv-admin-back:hover {
+            background: rgba(239, 68, 68, 0.16);
+            border-color: rgba(248, 113, 113, 0.75);
+            box-shadow: 0 0 18px rgba(239, 68, 68, 0.18);
+            transform: translateY(-1px);
+          }
+          .wv-admin-back:focus-visible {
+            outline: 2px solid rgba(248, 113, 113, 0.7);
+            outline-offset: 3px;
+          }
+        `}</style>
+        </div>
       </div>
     </div>
   );
