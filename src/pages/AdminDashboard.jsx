@@ -15,6 +15,7 @@ export default function AdminDashboard() {
 
   // New states for messages
   const [showWelcome, setShowWelcome] = useState(true);
+  const [showLogout, setShowLogout] = useState(false);
 
   // Subject form
   const [subjectForm, setSubjectForm] = useState({ name: "", code: "" });
@@ -58,9 +59,13 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = async () => {
-  await supabase.auth.signOut();
-  navigate("/?logout=true");
-};
+    if (showLogout) return;
+    setShowLogout(true);
+    setTimeout(async () => {
+      await supabase.auth.signOut();
+      navigate("/?logout=true");
+    }, 1500);
+  };
 
   // ── SUBJECTS ──
   const saveSubject = async () => {
@@ -219,30 +224,72 @@ export default function AdminDashboard() {
   return (
     <div className="wv-fade-in" style={{ minHeight: "100vh", position: "relative", zIndex: 1 }}>
 
-      {/* WELCOME & LOGOUT MESSAGES + MODALS (unchanged) */}
+      {/* WELCOME & LOGOUT MESSAGES + MODALS */}
       {showWelcome && (
         <div style={{
           position: "fixed",
-          top: "85px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          background: "rgba(15, 23, 42, 0.92)",
-          backdropFilter: "blur(20px)",
-          border: "3px solid green",
-          borderRadius: 16,
-          padding: "20px 45px",
-          color: "#00FF00",
-          fontFamily: "'Orbitron', sans-serif",
-          fontSize: "21px",
-          fontWeight: "600",
-          letterSpacing: "4px",
-          textAlign: "center",
-          boxShadow: "0 0 40px rgba(0, 240, 255, 0.3)",
+          top: 85,
+          left: 0,
+          right: 0,
           zIndex: 9999,
-          animation: "welcomeAnim 3s forwards",
-          whiteSpace: "nowrap",
+          display: "flex",
+          justifyContent: "center",
+          padding: "0 16px",
+          pointerEvents: "none",
         }}>
-          WELCOME ADMIN!
+          <div
+            className="wv-fade-up"
+            style={{
+              background: "rgba(8, 32, 20, 0.94)",
+              backdropFilter: "blur(20px)",
+              border: "2px solid rgba(34, 197, 94, 0.8)",
+              borderRadius: 16,
+              padding: "16px 28px",
+              color: "#4ade80",
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: 18,
+              fontWeight: 600,
+              letterSpacing: 3,
+              textAlign: "center",
+              boxShadow: "0 0 35px rgba(34, 197, 94, 0.35)",
+            }}
+          >
+            WELCOME ADMIN!
+          </div>
+        </div>
+      )}
+
+      {showLogout && (
+        <div style={{
+          position: "fixed",
+          top: 85,
+          left: 0,
+          right: 0,
+          zIndex: 10000,
+          display: "flex",
+          justifyContent: "center",
+          padding: "0 16px",
+          pointerEvents: "none",
+        }}>
+          <div
+            className="wv-fade-up"
+            style={{
+              background: "rgba(40, 8, 8, 0.94)",
+              backdropFilter: "blur(20px)",
+              border: "2px solid rgba(248, 113, 113, 0.8)",
+              borderRadius: 16,
+              padding: "16px 28px",
+              color: "#f87171",
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: 18,
+              fontWeight: 600,
+              letterSpacing: 3,
+              textAlign: "center",
+              boxShadow: "0 0 35px rgba(248, 113, 113, 0.35)",
+            }}
+          >
+            GOODBYE ADMIN!
+          </div>
         </div>
       )}
 
@@ -711,13 +758,6 @@ export default function AdminDashboard() {
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.2); border-radius: 2px; }
-        
-        @keyframes welcomeAnim {
-          0%   { opacity: 0; transform: translate(-50%, -30px); }
-          15%  { opacity: 1; transform: translate(-50%, 0); }
-          75%  { opacity: 1; transform: translate(-50%, 0); }
-          100% { opacity: 0; transform: translate(-50%, -30px); }
-        }
       `}</style>
     </div>
   );
