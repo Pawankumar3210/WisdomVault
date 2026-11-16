@@ -7,6 +7,7 @@ export default function InstallPwaPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [closing, setClosing] = useState(false);
 
   useEffect(() => {
     // Check if already running in standalone mode (already installed)
@@ -74,15 +75,21 @@ export default function InstallPwaPrompt() {
   };
 
   const handleDismiss = () => {
-    setShowPrompt(false);
-    setShowIOSGuide(false);
-    localStorage.setItem("wv_pwa_dismissed", Date.now().toString());
+    if (closing) return;
+    setClosing(true);
+    setTimeout(() => {
+      setShowPrompt(false);
+      setShowIOSGuide(false);
+      setClosing(false);
+      localStorage.setItem("wv_pwa_dismissed", Date.now().toString());
+    }, 220);
   };
 
   if (!showPrompt) return null;
 
   return (
     <div
+      className={closing ? "wv-pwa-out" : "wv-pwa-in"}
       style={{
         position: "fixed",
         bottom: 20,
@@ -103,7 +110,6 @@ export default function InstallPwaPrompt() {
         boxShadow: isLight
           ? "0 10px 30px rgba(0, 0, 0, 0.12), 0 0 15px rgba(2, 132, 199, 0.15)"
           : "0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 240, 255, 0.2)",
-        animation: "slideUpPwa 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         boxSizing: "border-box",
         transition: "all 0.3s ease",
       }}
@@ -243,19 +249,6 @@ export default function InstallPwaPrompt() {
           <span>In Safari, tap <strong>Share</strong> icon then scroll and tap <strong>'Add to Home Screen'</strong>.</span>
         </div>
       )}
-
-      <style>{`
-        @keyframes slideUpPwa {
-          from {
-            transform: translate(-50%, 40px);
-            opacity: 0;
-          }
-          to {
-            transform: translate(-50%, 0);
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
   );
 }

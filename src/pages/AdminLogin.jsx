@@ -50,14 +50,14 @@ export default function AdminLogin() {
   };
 
   return (
-    <div style={{
+    <div className="wv-fade-in" style={{
       position: "fixed", inset: 0, zIndex: 50,
       background: "#080818",
       overflowY: "auto",
-      display: "flex", alignItems: "center", justifyContent: "center",
+      display: "flex",
       padding: 20,
     }}>
-      <button onClick={() => navigate("/")} style={{
+      <button onClick={() => navigate("/")} className="wv-action-btn" style={{
         position: "absolute", top: 20, left: 20,
         display: "flex", alignItems: "center", gap: 6,
         background: "transparent", border: "none",
@@ -68,8 +68,9 @@ export default function AdminLogin() {
         ← BACK TO HOME
       </button>
 
-      <div style={{
+      <div className="wv-scale-in" style={{
         width: "100%", maxWidth: 400,
+        margin: "auto",
         background: "rgba(0,240,255,0.03)",
         border: "1px solid rgba(0,240,255,0.2)",
         borderRadius: 20, padding: 36,
@@ -147,13 +148,17 @@ export default function AdminLogin() {
           </div>
 
           {error && (
-            <div style={{
-              padding: "10px 14px",
-              background: "rgba(255,60,60,0.1)",
-              border: "1px solid rgba(255,60,60,0.3)",
-              borderRadius: 8, color: "#ff8080",
-              fontSize: 13, marginBottom: 16, textAlign: "center",
-            }}>
+            <div
+              key={error}
+              className="wv-shake"
+              style={{
+                padding: "10px 14px",
+                background: "rgba(255,60,60,0.1)",
+                border: "1px solid rgba(255,60,60,0.3)",
+                borderRadius: 8, color: "#ff8080",
+                fontSize: 13, marginBottom: 16, textAlign: "center",
+              }}
+            >
               {error}
             </div>
           )}
@@ -161,6 +166,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading || !email || !password}
+            className="wv-action-btn"
             style={{
               width: "100%", padding: 14,
               background: "linear-gradient(135deg, rgba(0,240,255,0.15), rgba(0,240,255,0.05))",
@@ -171,6 +177,7 @@ export default function AdminLogin() {
               cursor: loading ? "not-allowed" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               opacity: (!email || !password) ? 0.5 : 1,
+              animation: loading ? "wv-pulse 1s ease-in-out infinite" : "none",
             }}
           >
             {loading ? "VERIFYING..." : "ENTER VAULT"}

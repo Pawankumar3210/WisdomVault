@@ -82,14 +82,33 @@ function LinkedInButtonContent({ color }) {
 export default function Footer() {
   const [showTeam, setShowTeam] = useState(false);
   const [showContributors, setShowContributors] = useState(false);
+  const [teamClosing, setTeamClosing] = useState(false);
+  const [contribClosing, setContribClosing] = useState(false);
   const { isLight } = useTheme();
+
+  const closeTeam = () => {
+    setTeamClosing(true);
+    setTimeout(() => {
+      setShowTeam(false);
+      setTeamClosing(false);
+    }, 220);
+  };
+
+  const closeContributors = () => {
+    setContribClosing(true);
+    setTimeout(() => {
+      setShowContributors(false);
+      setContribClosing(false);
+    }, 220);
+  };
 
   return (
     <>
       {/* TEAM MODAL */}
       {showTeam && (
         <div
-          onClick={(e) => e.target === e.currentTarget && setShowTeam(false)}
+          onClick={(e) => e.target === e.currentTarget && closeTeam()}
+          className={`wv-modal-backdrop ${teamClosing ? "wv-closing" : ""}`}
           style={{
             position: "fixed",
             inset: 0,
@@ -100,10 +119,10 @@ export default function Footer() {
             alignItems: "center",
             justifyContent: "center",
             padding: 12,
-            animation: "modalFadeIn 0.3s ease",
           }}
         >
           <div
+            className="wv-modal-panel"
             style={{
               width: "100%",
               maxWidth: 400,
@@ -112,11 +131,11 @@ export default function Footer() {
                 : "linear-gradient(135deg, rgba(8,8,30,0.98), rgba(4,4,20,0.98))",
               border: isLight ? "1px solid rgba(2, 132, 199, 0.3)" : "1px solid rgba(0,240,255,0.25)",
               borderRadius: 20,
-              overflow: "hidden",
+              overflowX: "hidden",
+              overflowY: "auto",
               boxShadow: isLight
                 ? "0 20px 60px rgba(0,0,0,0.15), 0 0 40px rgba(2,132,199,0.1)"
                 : "0 0 60px rgba(0,240,255,0.12), 0 0 120px rgba(0,240,255,0.05)",
-              animation: "modalSlideUp 0.35s ease",
               position: "relative",
             }}
           >
@@ -148,7 +167,7 @@ export default function Footer() {
               }}
             >
               <button
-                onClick={() => setShowTeam(false)}
+                onClick={closeTeam}
                 style={{
                   position: "absolute",
                   top: 14,
@@ -368,7 +387,8 @@ export default function Footer() {
       {/* CONTENT CONTRIBUTORS OVERLAY */}
       {showContributors && (
         <div
-          onClick={(e) => e.target === e.currentTarget && setShowContributors(false)}
+          onClick={(e) => e.target === e.currentTarget && closeContributors()}
+          className={`wv-modal-backdrop ${contribClosing ? "wv-closing" : ""}`}
           style={{
             position: "fixed",
             inset: 0,
@@ -379,10 +399,10 @@ export default function Footer() {
             alignItems: "center",
             justifyContent: "center",
             padding: 12,
-            animation: "modalFadeIn 0.3s ease",
           }}
         >
           <div
+            className="wv-modal-panel"
             style={{
               width: "100%",
               maxWidth: 320,
@@ -391,11 +411,11 @@ export default function Footer() {
                 : "linear-gradient(135deg, rgba(8,8,30,0.98), rgba(4,4,20,0.98))",
               border: isLight ? "1px solid rgba(217, 119, 6, 0.35)" : "1px solid rgba(251, 191, 36, 0.3)",
               borderRadius: 20,
-              overflow: "hidden",
+              overflowX: "hidden",
+              overflowY: "auto",
               boxShadow: isLight
                 ? "0 20px 60px rgba(0,0,0,0.15), 0 0 30px rgba(217, 119, 6, 0.1)"
                 : "0 0 60px rgba(251, 191, 36, 0.15), 0 0 120px rgba(251, 191, 36, 0.05)",
-              animation: "modalSlideUp 0.35s ease",
               position: "relative",
             }}
           >
@@ -411,7 +431,7 @@ export default function Footer() {
               }}
             >
               <button
-                onClick={() => setShowContributors(false)}
+                onClick={closeContributors}
                 style={{
                   position: "absolute",
                   top: 10,
@@ -544,6 +564,7 @@ export default function Footer() {
 
       {/* FOOTER BAR */}
       <footer
+        className="wv-fade-in"
         style={{
           position: "relative",
           zIndex: 10,
@@ -612,14 +633,6 @@ export default function Footer() {
             Team Udbhav
           </button>
         </div>
-
-        <style>{`
-          @keyframes modalFadeIn { from{opacity:0} to{opacity:1} }
-          @keyframes modalSlideUp {
-            from{ opacity:0; transform:translateY(30px) scale(0.96) }
-            to{ opacity:1; transform:translateY(0) scale(1) }
-          }
-        `}</style>
       </footer>
     </>
   );

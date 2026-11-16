@@ -56,28 +56,30 @@ function MainLayout() {
     >
       <ParticleBackground />
       <InstallPwaPrompt />
-      <Routes>
-        <Route path="/pdf/:id" element={<PDFViewer />} />
+      <div key={location.pathname} className="wv-page-transition">
+        <Routes>
+          <Route path="/pdf/:id" element={<PDFViewer />} />
 
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/*"
-          element={
-            <>
-              <Header />
-              <Home />
-            </>
-          }
-        />
-      </Routes>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/*"
+            element={
+              <>
+                <Header />
+                <Home />
+              </>
+            }
+          />
+        </Routes>
+      </div>
     </div>
   );
 }

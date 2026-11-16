@@ -11,6 +11,8 @@ export default function PDFViewer() {
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [downloading, setDownloading] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const { isLight } = useTheme();
 
   useEffect(() => {
@@ -62,6 +64,26 @@ export default function PDFViewer() {
     }
   };
 
+  const handleDownload = async (e) => {
+    e.preventDefault();
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const response = await fetch(content?.pdf_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${content?.title}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      setDownloaded(true);
+      setTimeout(() => setDownloaded(false), 2200);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (loading) return <FuturisticLoader text="LOADING DOCUMENT" />;
 
   if (error) return (
@@ -78,7 +100,7 @@ export default function PDFViewer() {
       }}>
         {error}
       </div>
-      <button onClick={() => navigate("/")} style={{
+      <button onClick={() => navigate("/")} className="wv-action-btn" style={{
         padding: "10px 24px",
         background: isLight ? "rgba(2,132,199,0.08)" : "rgba(0,240,255,0.08)",
         border: isLight ? "1px solid rgba(2,132,199,0.35)" : "1px solid rgba(0,240,255,0.3)",
@@ -96,7 +118,7 @@ export default function PDFViewer() {
     <div style={{ minHeight: "100vh", position: "relative", zIndex: 1 }}>
 
       {/* TOP BAR */}
-      <div style={{
+      <div className="wv-pdf-toolbar" style={{
         background: isLight ? "rgba(250, 243, 224, 0.95)" : "rgba(8,8,24,0.9)",
         backdropFilter: "blur(20px)",
         borderBottom: isLight ? "1px solid rgba(2, 132, 199, 0.18)" : "1px solid rgba(0,240,255,0.15)",
@@ -108,7 +130,7 @@ export default function PDFViewer() {
         position: "sticky", top: 0, zIndex: 10,
         transition: "background 0.3s ease, border-color 0.3s ease",
       }}>
-        <button onClick={handleBack} style={{
+        <button onClick={handleBack} className="wv-action-btn" style={{
           display: "flex", alignItems: "center", gap: 6,
           padding: "8px 14px",
           background: isLight ? "rgba(2,132,199,0.08)" : "rgba(0,240,255,0.06)",
@@ -161,18 +183,10 @@ export default function PDFViewer() {
 
           <a
             href={content?.pdf_url}
-            onClick={async (e) => {
-              e.preventDefault();
-              const response = await fetch(content?.pdf_url);
-              const blob = await response.blob();
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `${content?.title}.pdf`;
-              a.click();
-              window.URL.revokeObjectURL(url);
-            }}
+            onClick={handleDownload}
             rel="noreferrer"
+            className="wv-action-btn"
+            aria-busy={downloading}
             style={{
               display: "flex", alignItems: "center", gap: 6,
               padding: "8px 14px",
@@ -184,15 +198,17 @@ export default function PDFViewer() {
               fontFamily: "'Orbitron', sans-serif",
               letterSpacing: 1,
               transition: "all 0.2s ease",
+              cursor: downloading ? "wait" : "pointer",
+              pointerEvents: downloading ? "none" : "auto",
             }}
           >
-            DOWNLOAD
+            {downloading ? "SAVING..." : downloaded ? "SAVED" : "DOWNLOAD"}
           </a>
         </div>
       </div>
 
       {/* PDF VIEWER */}
-      <div style={{
+      <div className="wv-pdf-frame" style={{
         width: "100%",
         height: "calc(100vh - 70px)",
         background: isLight ? "#EFE2C5" : "#1a1a2e",

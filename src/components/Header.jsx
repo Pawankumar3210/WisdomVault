@@ -45,6 +45,7 @@ export default function Header() {
         <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
           <Link
             to="/"
+            className="wv-brand-link"
             style={{
               textDecoration: "none",
               display: "flex",
@@ -65,7 +66,7 @@ export default function Header() {
                 filter: isLight
                   ? "drop-shadow(0 2px 8px rgba(2, 132, 199, 0.35))"
                   : "drop-shadow(0 0 8px rgba(0, 240, 255, 0.6))",
-                transition: "filter 0.3s ease",
+                transition: "filter 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
               }}
             />
             <div
@@ -119,7 +120,7 @@ export default function Header() {
             >
               <Link
                 to="/admin"
-                className="wv-admin-btn"
+                className="wv-admin-btn wv-action-btn"
                 style={{
                   padding: "7px 12px",
                   background: isLight ? "rgba(2, 132, 199, 0.1)" : "rgba(0, 240, 255, 0.1)",
@@ -140,7 +141,7 @@ export default function Header() {
               </Link>
               <button
                 onClick={handleLogout}
-                className="wv-admin-btn"
+                className="wv-admin-btn wv-action-btn"
                 style={{
                   padding: "7px 12px",
                   background: isLight ? "rgba(239, 68, 68, 0.1)" : "rgba(255, 60, 60, 0.1)",
@@ -163,7 +164,7 @@ export default function Header() {
           ) : (
             <Link
               to="/admin/login"
-              className="wv-admin-btn"
+              className="wv-admin-btn wv-action-btn"
               style={{
                 padding: "8px 16px",
                 background: isLight ? "rgba(2, 132, 199, 0.08)" : "rgba(0, 240, 255, 0.08)",

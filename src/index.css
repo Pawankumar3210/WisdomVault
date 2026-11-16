@@ -205,3 +205,229 @@ body.light-mode ::selection {
     display: inline !important;
   }
 }
+
+/* ---------- Motion system ---------- */
+@keyframes wv-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wv-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes wv-fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wv-scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes wv-slide-down {
+  from { opacity: 0; transform: translateY(-14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wv-search-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes wv-expand-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wv-ring-burst {
+  0% { transform: scale(0.4); opacity: 0.7; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+
+@keyframes wv-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+@keyframes wv-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.65; transform: scale(0.97); }
+}
+
+@keyframes wv-shimmer {
+  from { background-position: 200% center; }
+  to { background-position: -200% center; }
+}
+
+@keyframes wv-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes wv-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes wv-modal-in {
+  from { opacity: 0; transform: translateY(28px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes wv-modal-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(18px) scale(0.97); }
+}
+
+@keyframes wv-pwa-in {
+  from { opacity: 0; transform: translate(-50%, 40px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes wv-pwa-out {
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to { opacity: 0; transform: translate(-50%, 24px); }
+}
+
+.wv-page-transition {
+  animation: wv-fade-in 0.35s ease;
+}
+
+.wv-fade-in {
+  animation: wv-fade-in 0.45s ease both;
+}
+
+.wv-fade-up {
+  animation: wv-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.wv-scale-in {
+  animation: wv-scale-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.wv-search-dropdown {
+  animation: wv-search-in 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+}
+
+.wv-expand-content {
+  animation: wv-expand-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+}
+
+.wv-stagger {
+  animation: wv-fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.wv-shake {
+  animation: wv-shake 0.4s ease;
+}
+
+.wv-modal-backdrop {
+  animation: wv-fade-in 0.28s ease both;
+}
+
+.wv-modal-panel {
+  animation: wv-modal-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.wv-modal-backdrop.wv-closing {
+  animation: wv-fade-out 0.22s ease both;
+}
+
+.wv-modal-backdrop.wv-closing .wv-modal-panel {
+  animation: wv-modal-out 0.22s ease both;
+}
+
+.wv-pdf-toolbar {
+  animation: wv-slide-down 0.35s ease both;
+}
+
+.wv-pdf-frame {
+  animation: wv-fade-in 0.5s ease both;
+}
+
+.wv-pwa-in {
+  animation: wv-pwa-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.wv-pwa-out {
+  animation: wv-pwa-out 0.22s ease both;
+}
+
+.wv-subject-card {
+  animation: wv-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.wv-subject-card .wv-card-item {
+  animation: wv-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.wv-action-btn {
+  transition: transform 0.2s ease, box-shadow 0.2s ease,
+    background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.wv-action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.wv-action-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.wv-brand-link:hover .wv-header-logo-img {
+  transform: rotate(-6deg) scale(1.08);
+}
+
+.wv-header-logo-img {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+}
+
+.wv-brand-word {
+  transition: transform 0.3s ease, text-shadow 0.3s ease;
+}
+
+.wv-brand-link:hover .wv-brand-wisdom {
+  transform: translateY(-1px);
+}
+
+.wv-brand-link:hover .wv-brand-vault {
+  transform: translateY(1px);
+}
+
+.wv-theme-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  pointer-events: none;
+  animation: wv-ring-burst 0.5s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

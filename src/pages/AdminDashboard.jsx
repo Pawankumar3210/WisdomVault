@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { clearSearchCache } from "../components/SearchBar";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -10,10 +11,10 @@ export default function AdminDashboard() {
   const [, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmClosing, setConfirmClosing] = useState(false);
 
   // New states for messages
   const [showWelcome, setShowWelcome] = useState(true);
-  const [showLogoutMsg, setShowLogoutMsg] = useState(false);
 
   // Subject form
   const [subjectForm, setSubjectForm] = useState({ name: "", code: "" });
@@ -71,13 +72,23 @@ export default function AdminDashboard() {
     }
     setSubjectForm({ name: "", code: "" });
     setEditingSubject(null);
+    clearSearchCache();
     fetchAll();
+  };
+
+  const closeConfirm = () => {
+    setConfirmClosing(true);
+    setTimeout(() => {
+      setConfirmDelete(null);
+      setConfirmClosing(false);
+    }, 220);
   };
 
   const deleteSubject = async (id) => {
   const { error } = await supabase.from("subjects").delete().eq("id", id);
   if (error) { alert(error.message); return; }
-  setConfirmDelete(null);
+  clearSearchCache();
+  closeConfirm();
   fetchAll();
 };
 
@@ -130,6 +141,7 @@ export default function AdminDashboard() {
     setEditingContent(null);
     setPdfFile(null);
     if (fileRef.current) fileRef.current.value = "";
+    clearSearchCache();
     fetchAll();
     setUploading(false);
   };
@@ -137,7 +149,8 @@ export default function AdminDashboard() {
   const deleteContent = async (id) => {
   const { error } = await supabase.from("content").delete().eq("id", id);
   if (error) { alert(error.message); return; }
-  setConfirmDelete(null);
+  clearSearchCache();
+  closeConfirm();
   fetchAll();
 };
 
@@ -204,7 +217,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", position: "relative", zIndex: 1 }}>
+    <div className="wv-fade-in" style={{ minHeight: "100vh", position: "relative", zIndex: 1 }}>
 
       {/* WELCOME & LOGOUT MESSAGES + MODALS (unchanged) */}
       {showWelcome && (
@@ -233,37 +246,18 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {showLogoutMsg && (
-        <div style={{
-          position: "fixed",
-          top: "85px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          background: "rgba(30, 10, 10, 0.92)",
-          backdropFilter: "blur(20px)",
-          border: "3px solid rgba(255, 80, 80, 0.5)",
-          borderRadius: 16,
-          padding: "18px 42px",
-          color: "#ff8080",
-          fontFamily: "'Orbitron', sans-serif",
-          fontSize: "21px",
-          letterSpacing: "3px",
-          textAlign: "center",
-          zIndex: 9999,
-          animation: "welcomeAnim 2.5s forwards",
-        }}>
-          GOODBYE ADMIN
-        </div>
-      )}
-
       {confirmDelete && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 1000,
-          background: "rgba(0,0,0,0.7)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          padding: 20,
-        }}>
-          <div style={{
+        <div
+          className={`wv-modal-backdrop ${confirmClosing ? "wv-closing" : ""}`}
+          onClick={(e) => e.target === e.currentTarget && closeConfirm()}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 20,
+          }}
+        >
+          <div className="wv-modal-panel" style={{
             background: "#0d0d22",
             border: "1px solid rgba(255,60,60,0.3)",
             borderRadius: 16, padding: 28,
@@ -282,7 +276,7 @@ export default function AdminDashboard() {
               Are you sure? This action cannot be undone.
             </div>
             <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-              <button onClick={() => setConfirmDelete(null)} style={btnPrimary}>
+              <button onClick={closeConfirm} style={btnPrimary}>
                 CANCEL
               </button>
               <button
@@ -356,7 +350,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 60px" }}>
+      <div key={activeTab} className="wv-fade-up" style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 60px" }}>
 
         {/* OVERVIEW, SUBJECTS, and CONTENT TABS remain the same as you had */}
         {/* ... (All your existing JSX for overview, subjects, and content tabs) ... */}
@@ -374,9 +368,10 @@ export default function AdminDashboard() {
                 { label: "Q-Banks", count: contents.filter(c => c.type === "qb").length, color: "#a855f7" },
                 { label: "Papers", count: contents.filter(c => c.type === "paper").length, color: "#f59e0b" },
               ].map((s, i) => (
-                <div key={i} style={{
+                <div key={i} className="wv-stagger" style={{
                   background: "rgba(255,255,255,0.03)",
                   border: `1px solid ${s.color}25`,
+                  animationDelay: `${i * 55}ms`,
                   borderRadius: 12, padding: "20px 16px",
                   textAlign: "center", position: "relative", overflow: "hidden",
                 }}>

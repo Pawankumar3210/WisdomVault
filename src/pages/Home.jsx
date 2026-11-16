@@ -9,6 +9,7 @@ import TopLoadingBar from "../components/TopLoadingBar";
 import AnimatedCounter from "../components/AnimatedCounter";
 import TypewriterText from "../components/TypewriterText";
 import Footer from "../components/Footer";
+import Reveal from "../components/Reveal";
 
 export default function Home() {
   const [subjects, setSubjects] = useState([]);
@@ -136,36 +137,38 @@ export default function Home() {
         </div>
 
         {/* STATS BAR */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 12,
-            padding: "0 20px 40px",
-            flexWrap: "wrap",
-          }}
-        >
-          <AnimatedCounter
-            target={contents.filter(c => c.type === "note").length}
-            color={isLight ? "#0284c7" : "#00f0ff"}
-            label="Notes"
-          />
-          <AnimatedCounter
-            target={contents.filter(c => c.type === "qb").length}
-            color={isLight ? "#7c3aed" : "#a855f7"}
-            label="Question Banks"
-          />
-          <AnimatedCounter
-            target={contents.filter(c => c.type === "paper").length}
-            color={isLight ? "#d97706" : "#f59e0b"}
-            label="Question Papers"
-          />
-          <AnimatedCounter
-            target={subjects.length}
-            color={isLight ? "#059669" : "#10b981"}
-            label="Subjects"
-          />
-        </div>
+        <Reveal delay={60}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 12,
+              padding: "0 20px 40px",
+              flexWrap: "wrap",
+            }}
+          >
+            <AnimatedCounter
+              target={contents.filter(c => c.type === "note").length}
+              color={isLight ? "#0284c7" : "#00f0ff"}
+              label="Notes"
+            />
+            <AnimatedCounter
+              target={contents.filter(c => c.type === "qb").length}
+              color={isLight ? "#7c3aed" : "#a855f7"}
+              label="Question Banks"
+            />
+            <AnimatedCounter
+              target={contents.filter(c => c.type === "paper").length}
+              color={isLight ? "#d97706" : "#f59e0b"}
+              label="Question Papers"
+            />
+            <AnimatedCounter
+              target={subjects.length}
+              color={isLight ? "#059669" : "#10b981"}
+              label="Subjects"
+            />
+          </div>
+        </Reveal>
 
         {/* SUBJECTS SECTION */}
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px 60px" }}>
@@ -233,27 +236,30 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: expandedSubjectId
-                  ? "minmax(280px, 640px)"
-                  : "repeat(auto-fill, minmax(280px, 1fr))",
-                justifyContent: expandedSubjectId ? "center" : "stretch",
-                gap: 20,
-              }}
-            >
-              {filteredSubjects.map(subject => (
-                <SubjectCard
-                  key={subject.id}
-                  subject={subject}
-                  contents={contents.filter(c => c.subject_id === subject.id)}
-                  expanded={expandedSubjectId === subject.id}
-                  onExpand={() => handleExpand(subject.id)}
-                  onCollapse={handleCollapse}
-                />
-              ))}
-            </div>
+            <Reveal delay={120}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: expandedSubjectId
+                    ? "minmax(280px, 640px)"
+                    : "repeat(auto-fill, minmax(280px, 1fr))",
+                  justifyContent: expandedSubjectId ? "center" : "stretch",
+                  gap: 20,
+                }}
+              >
+                {filteredSubjects.map((subject, index) => (
+                  <SubjectCard
+                    key={subject.id}
+                    subject={subject}
+                    index={index}
+                    contents={contents.filter(c => c.subject_id === subject.id)}
+                    expanded={expandedSubjectId === subject.id}
+                    onExpand={() => handleExpand(subject.id)}
+                    onCollapse={handleCollapse}
+                  />
+                ))}
+              </div>
+            </Reveal>
           )}
         </div>
       </div>

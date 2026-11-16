@@ -1,9 +1,33 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 
-export default function SubjectCard({ subject, contents, expanded, onExpand, onCollapse }) {
+export default function SubjectCard({ subject, contents, expanded, onExpand, onCollapse, index = 0 }) {
   const navigate = useNavigate();
   const { isLight } = useTheme();
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadedId, setDownloadedId] = useState(null);
+
+  const handleDownload = async (item) => {
+    if (downloadingId) return;
+    setDownloadingId(item.id);
+    try {
+      const res = await fetch(item.pdf_url);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${item.title}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setDownloadedId(item.id);
+      setTimeout(() => {
+        setDownloadedId(current => (current === item.id ? null : current));
+      }, 2200);
+    } finally {
+      setDownloadingId(current => (current === item.id ? null : current));
+    }
+  };
 
   const notes = contents?.filter(c => c.type === "note") || [];
   const qbs = contents?.filter(c => c.type === "qb") || [];
@@ -32,6 +56,7 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
   return (
     <div 
       id={`subject-card-${subject.id}`}
+      className="wv-subject-card"
       style={{
         background: isLight ? "rgba(244, 235, 206, 0.95)" : "rgba(0,240,255,0.03)",
         border: `1px solid ${defaultBorder}`,
@@ -44,6 +69,7 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
         position: "relative",
         overflow: "hidden",
         scrollMarginTop: 84,
+        animationDelay: `${Math.min(index, 8) * 55}ms`,
       }}
       onClick={!expanded ? handleCardClick : undefined}
       onMouseEnter={e => {
@@ -65,6 +91,7 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
       {expanded && (
         <button
           onClick={handleBack}
+          className="wv-action-btn"
           style={{
             position: "absolute",
             top: 16,
@@ -139,7 +166,7 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
 
       {/* Expanded Content */}
       {expanded && (
-        <div>
+        <div className="wv-expand-content">
           {[
             { label: "Notes", items: notes, color: isLight ? "#0284c7" : "#00f0ff" },
             { label: "Question Banks", items: qbs, color: isLight ? "#7c3aed" : "#a855f7" },
@@ -156,15 +183,20 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
                   {section.label.toUpperCase()}
                 </div>
 
-                {section.items.map((item) => (
-                  <div key={item.id} style={{
-                    padding: "16px 18px",
-                    background: isLight ? "rgba(238, 227, 196, 0.9)" : "rgba(255,255,255,0.03)",
-                    border: isLight ? "1px solid rgba(2, 132, 199, 0.15)" : "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 12,
-                    marginBottom: 10,
-                    boxShadow: isLight ? "0 2px 6px rgba(0,0,0,0.03)" : "none",
-                  }}>
+                {section.items.map((item, itemIndex) => (
+                  <div
+                    key={item.id}
+                    className="wv-card-item"
+                    style={{
+                      padding: "16px 18px",
+                      background: isLight ? "rgba(238, 227, 196, 0.9)" : "rgba(255,255,255,0.03)",
+                      border: isLight ? "1px solid rgba(2, 132, 199, 0.15)" : "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 12,
+                      marginBottom: 10,
+                      boxShadow: isLight ? "0 2px 6px rgba(0,0,0,0.03)" : "none",
+                      animationDelay: `${Math.min(itemIndex, 8) * 40}ms`,
+                    }}
+                  >
                     <div style={{
                       fontSize: 15,
                       fontWeight: 600,
@@ -176,6 +208,7 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
                     <div style={{ display: "flex", gap: 10 }}>
                       <button
                         onClick={() => navigate(`/pdf/${item.id}`)}
+                        className="wv-action-btn"
                         style={{
                           flex: 1, padding: "10px",
                           background: isLight ? `${section.color}15` : `${section.color}15`,
@@ -189,27 +222,25 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
                         👁️ VIEW
                       </button>
                       <button
-                        onClick={async () => {
-                          const res = await fetch(item.pdf_url);
-                          const blob = await res.blob();
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = url;
-                          a.download = `${item.title}.pdf`;
-                          a.click();
-                          URL.revokeObjectURL(url);
-                        }}
+                        onClick={() => handleDownload(item)}
+                        disabled={downloadingId === item.id}
+                        className="wv-action-btn"
                         style={{
                           flex: 1, padding: "10px",
                           background: isLight ? `${section.color}15` : `${section.color}15`,
                           border: isLight ? `1px solid ${section.color}50` : `1px solid ${section.color}40`,
                           borderRadius: 8,
                           color: section.color, fontSize: 12.5, fontFamily: "'Orbitron', sans-serif",
-                          cursor: "pointer",
+                          cursor: downloadingId === item.id ? "wait" : "pointer",
                           transition: "all 0.2s ease",
+                          opacity: downloadingId && downloadingId !== item.id ? 0.6 : 1,
                         }}
                       >
-                        ⬇️ DOWNLOAD
+                        {downloadingId === item.id
+                          ? "SAVING..."
+                          : downloadedId === item.id
+                            ? "SAVED"
+                            : "⬇️ DOWNLOAD"}
                       </button>
                     </div>
                   </div>

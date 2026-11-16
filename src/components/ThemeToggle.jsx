@@ -44,6 +44,13 @@ export default function ThemeToggle({ className = "", style = {} }) {
         ...style,
       }}
     >
+      {isRotating && (
+        <span
+          className="wv-theme-ring"
+          aria-hidden="true"
+          style={{ borderColor: isLight ? "#d97706" : "#00f0ff" }}
+        />
+      )}
       <span
         style={{
           display: "flex",
