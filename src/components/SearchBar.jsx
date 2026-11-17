@@ -13,6 +13,8 @@ export default function SearchBar() {
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dataError, setDataError] = useState(false);
+  const [isSubjectFallback, setIsSubjectFallback] = useState(false);
+  const [focused, setFocused] = useState(false);
   const navigate = useNavigate();
   const ref = useRef(null);
   const inputRef = useRef(null);
@@ -35,6 +37,33 @@ export default function SearchBar() {
   }, []);
 
   useEffect(() => {
+    const handleShortcut = (event) => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+
+      const target = event.target;
+      const tagName = target?.tagName;
+      if (
+        target?.isContentEditable ||
+        tagName === "INPUT" ||
+        tagName === "TEXTAREA" ||
+        tagName === "SELECT" ||
+        document.querySelector('[aria-modal="true"]')
+      ) {
+        return;
+      }
+
+      const searchInput = document.getElementById("vault-search");
+      if (!searchInput) return;
+
+      event.preventDefault();
+      searchInput.focus();
+    };
+
+    document.addEventListener("keydown", handleShortcut);
+    return () => document.removeEventListener("keydown", handleShortcut);
+  }, []);
+
+  useEffect(() => {
     if (query.trim().length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -42,11 +71,13 @@ export default function SearchBar() {
       setSearched(false);
       setLoading(false);
       setDataError(false);
+      setIsSubjectFallback(false);
       return;
     }
 
     setSearched(false);
     setDataError(false);
+    setIsSubjectFallback(false);
     let cancelled = false;
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -84,13 +115,45 @@ export default function SearchBar() {
             kind: "subject",
           }));
 
-        const results = [...contentResults, ...subjectResults];
+        let results = [...contentResults, ...subjectResults];
+
+        if (results.length === 0) {
+          const counts = data.contents.reduce((map, item) => {
+            if (item.subject_id) map.set(item.subject_id, (map.get(item.subject_id) || 0) + 1);
+            return map;
+          }, new Map());
+
+          results = data.subjects
+            .map(subject => ({
+              subject,
+              score: scoreSubject(term, subject),
+              count: counts.get(subject.id) || 0,
+            }))
+            .filter(result => result.count > 0)
+            .sort((a, b) =>
+              b.score - a.score ||
+              b.count - a.count ||
+              a.subject.name.localeCompare(b.subject.name)
+            )
+            .slice(0, 3)
+            .map(({ subject, count }) => ({
+              id: subject.id,
+              label: subject.name,
+              sublabel: `${subject.code} · ${count} ${count === 1 ? "document" : "documents"}`,
+              type: "subject",
+              kind: "subject",
+              fallback: true,
+            }));
+
+          setIsSubjectFallback(results.length > 0);
+        }
+
         setSuggestions(results);
         setShowSuggestions(results.length > 0 && document.activeElement === inputRef.current);
         setActiveIndex(-1);
         setSearched(true);
 
-        if (results.length === 0 && trackedZero.current !== term) {
+        if (contentResults.length === 0 && subjectResults.length === 0 && trackedZero.current !== term) {
           trackedZero.current = term;
           trackEvent("search_zero_results", { query: term.slice(0, 80) });
         }
@@ -100,6 +163,7 @@ export default function SearchBar() {
           setShowSuggestions(false);
           setSearched(true);
           setDataError(true);
+          setIsSubjectFallback(false);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -216,16 +280,19 @@ export default function SearchBar() {
           aria-controls={suggestions.length > 0 ? "vault-search-list" : undefined}
           aria-autocomplete="list"
           aria-activedescendant={activeIndex >= 0 ? `vault-search-option-${activeIndex}` : undefined}
+          aria-keyshortcuts="/"
           placeholder="Search notes, question banks, papers..."
           value={query}
           onChange={event => setQuery(event.target.value)}
           onFocus={event => {
+            setFocused(true);
             event.target.style.borderColor = isLight
               ? "rgba(2,132,199,0.7)"
               : "rgba(0,240,255,0.65)";
             if (suggestions.length > 0) setShowSuggestions(true);
           }}
           onBlur={event => {
+            setFocused(false);
             event.target.style.borderColor = isLight
               ? "rgba(2, 132, 199, 0.35)"
               : "rgba(0,240,255,0.3)";
@@ -278,6 +345,28 @@ export default function SearchBar() {
           </button>
         )}
 
+        {!query && !loading && !focused && (
+          <span aria-hidden="true" style={{
+            position: "absolute",
+            right: 14,
+            top: "50%",
+            transform: "translateY(-50%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 22,
+            height: 22,
+            borderRadius: 5,
+            border: isLight ? "1px solid rgba(2,132,199,0.25)" : "1px solid rgba(0,240,255,0.2)",
+            color: isLight ? "#64748b" : "rgba(255,255,255,0.35)",
+            fontSize: 11,
+            fontFamily: "'Orbitron', sans-serif",
+            pointerEvents: "none",
+          }}>
+            /
+          </span>
+        )}
+
         {loading && (
           <div
             aria-hidden="true"
@@ -301,7 +390,9 @@ export default function SearchBar() {
         {loading
           ? "Searching"
           : searched && !dataError
-            ? `${suggestions.length} suggestions available`
+            ? isSubjectFallback
+              ? `No exact matches. ${suggestions.length} subject suggestions available`
+              : `${suggestions.length} suggestions available`
             : dataError
               ? "Search is temporarily unavailable"
               : ""}
@@ -347,7 +438,18 @@ export default function SearchBar() {
             </div>
           ) : (
             <>
-              <div id="vault-search-list" role="listbox" aria-label="Search suggestions">
+              {isSubjectFallback && (
+                <div style={{
+                  padding: "11px 16px 9px",
+                  color: isLight ? "#64748b" : "rgba(255,255,255,0.45)",
+                  fontSize: 11,
+                  lineHeight: 1.5,
+                  borderBottom: isLight ? "1px solid rgba(2,132,199,0.1)" : "1px solid rgba(0,240,255,0.08)",
+                }}>
+                  No exact matches for "{query.trim()}". Try a subject:
+                </div>
+              )}
+              <div id="vault-search-list" role="listbox" aria-label={isSubjectFallback ? "Subject suggestions" : "Search suggestions"}>
               {suggestions.map((item, index) => (
                 <div
                   key={`${item.kind}-${item.id}-${index}`}

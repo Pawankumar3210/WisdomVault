@@ -9,6 +9,7 @@ import AnimatedCounter from "../components/AnimatedCounter";
 import TypewriterText from "../components/TypewriterText";
 import Footer from "../components/Footer";
 import Reveal from "../components/Reveal";
+import PersonalLibrary from "../components/PersonalLibrary";
 import { fetchVaultData } from "../lib/contentCache";
 import { usePageMeta } from "../lib/usePageMeta";
 
@@ -178,6 +179,10 @@ export default function Home() {
             />
           </div>
         </Reveal>
+
+        {!expandedSubjectId && !loading && !error && (
+          <PersonalLibrary contents={contents} />
+        )}
 
         {/* SUBJECTS SECTION */}
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px 60px" }}>

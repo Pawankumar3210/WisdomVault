@@ -7,6 +7,11 @@ import FuturisticLoader from "../components/FuturisticLoader";
 import { downloadPdf } from "../lib/download";
 import { trackEvent } from "../lib/analytics";
 import { usePageMeta } from "../lib/usePageMeta";
+import { formatFileSize, formatRelativeTime } from "../lib/format";
+import { loadPdfMetadata } from "../lib/pdfMetadata";
+import { sharePdf } from "../lib/share";
+import useUserLibrary from "../lib/useUserLibrary";
+import { recordPdfView } from "../lib/userLibrary";
 
 function isMobilePdfEnvironment() {
   if (typeof window === "undefined") return false;
@@ -27,8 +32,12 @@ export default function PDFViewer() {
   const [downloadError, setDownloadError] = useState("");
   const [isMobile, setIsMobile] = useState(isMobilePdfEnvironment);
   const [showInline, setShowInline] = useState(false);
+  const [metadata, setMetadata] = useState({ fileSize: null, pageCount: null });
+  const [lastViewedAt, setLastViewedAt] = useState(null);
+  const [shareStatus, setShareStatus] = useState("");
   const trackedView = useRef(false);
   const { isLight } = useTheme();
+  const { bookmarks, toggleBookmark } = useUserLibrary();
 
   const fetchContent = async () => {
     setLoading(true);
@@ -67,7 +76,33 @@ export default function PDFViewer() {
       type: content.type,
       subject: content.subjects?.name || "",
     });
+    setLastViewedAt(recordPdfView(content.id));
   }, [content]);
+
+  useEffect(() => {
+    setMetadata({ fileSize: null, pageCount: null });
+    if (!content?.pdf_url) return undefined;
+
+    const controller = new AbortController();
+    let active = true;
+
+    loadPdfMetadata(content.pdf_url, { signal: controller.signal })
+      .then(result => {
+        if (active) setMetadata(result);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [content?.pdf_url]);
+
+  useEffect(() => {
+    if (!shareStatus) return undefined;
+    const timer = setTimeout(() => setShareStatus(""), 2600);
+    return () => clearTimeout(timer);
+  }, [shareStatus]);
 
   usePageMeta({
     title: content?.title || (error ? "Document unavailable" : "Loading document"),
@@ -127,6 +162,47 @@ export default function PDFViewer() {
       setDownloadError(downloadFailure.message);
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const bookmarked = content ? bookmarks.some(bookmark => bookmark.id === content.id) : false;
+  const metadataParts = [
+    formatFileSize(metadata.fileSize),
+    metadata.pageCount ? `${metadata.pageCount} ${metadata.pageCount === 1 ? "page" : "pages"}` : "",
+  ].filter(Boolean);
+
+  const handleBookmark = () => {
+    if (!content) return;
+    const saved = toggleBookmark(content.id);
+    trackEvent("document_bookmark", {
+      type: content.type,
+      subject: content.subjects?.name || "",
+      action: saved ? "saved" : "removed",
+      source: "pdf_viewer",
+    });
+  };
+
+  const handleShare = async () => {
+    if (!content) return;
+
+    try {
+      const result = await sharePdf({
+        title: content.title,
+        subjectName: content.subjects?.name || "",
+        path: `/pdf/${content.id}`,
+      });
+
+      if (result.status === "shared") setShareStatus("SHARED");
+      else if (result.status === "copied") setShareStatus("LINK COPIED");
+      else if (result.status === "failed") setShareStatus("COULD NOT SHARE LINK");
+
+      trackEvent("document_share", {
+        type: content.type,
+        subject: content.subjects?.name || "",
+        method: result.status,
+      });
+    } catch {
+      setShareStatus("COULD NOT SHARE LINK");
     }
   };
 
@@ -253,7 +329,9 @@ export default function PDFViewer() {
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
           }}>
-            {content?.subjects?.name}
+            {[content?.subjects?.name, ...metadataParts, lastViewedAt ? `Last opened ${formatRelativeTime(lastViewedAt)}` : ""]
+              .filter(Boolean)
+              .join(" · ")}
           </div>
         </div>
 
@@ -262,6 +340,60 @@ export default function PDFViewer() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={handleBookmark}
+            aria-label={bookmarked ? "Remove from saved documents" : "Save for later"}
+            aria-pressed={bookmarked}
+            className="wv-action-btn"
+            style={{
+              width: 40,
+              height: 40,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              background: bookmarked
+                ? (isLight ? "rgba(2,132,199,0.16)" : "rgba(0,240,255,0.14)")
+                : (isLight ? "rgba(2,132,199,0.06)" : "rgba(0,240,255,0.06)"),
+              border: isLight ? "1px solid rgba(2,132,199,0.3)" : "1px solid rgba(0,240,255,0.25)",
+              borderRadius: 8,
+              color: isLight ? "#0284c7" : "#00f0ff",
+              cursor: "pointer",
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill={bookmarked ? "currentColor" : "none"} aria-hidden="true">
+              <path d="M6 4h12v16l-6-4-6 4V4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleShare}
+            aria-label="Share this document"
+            className="wv-action-btn"
+            style={{
+              width: 40,
+              height: 40,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              background: isLight ? "rgba(2,132,199,0.06)" : "rgba(0,240,255,0.06)",
+              border: isLight ? "1px solid rgba(2,132,199,0.3)" : "1px solid rgba(0,240,255,0.25)",
+              borderRadius: 8,
+              color: isLight ? "#0284c7" : "#00f0ff",
+              cursor: "pointer",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="18" cy="5" r="2.5" stroke="currentColor" strokeWidth="2" />
+              <circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" />
+              <circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="2" />
+              <path d="M8.2 10.8l7.6-4.6M8.2 13.2l7.6 4.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+
           <span style={{
             fontSize: 9,
             fontWeight: 700,
@@ -276,32 +408,6 @@ export default function PDFViewer() {
           }}>
             {getTypeLabel(content?.type)}
           </span>
-
-          <a
-            href={content?.pdf_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleOpenPdf}
-            className="wv-action-btn"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "9px 12px",
-              minHeight: 40,
-              background: isLight ? "rgba(2,132,199,0.06)" : "rgba(0,240,255,0.06)",
-              border: isLight ? "1px solid rgba(2,132,199,0.3)" : "1px solid rgba(0,240,255,0.25)",
-              borderRadius: 8,
-              color: isLight ? "#0284c7" : "#00f0ff",
-              textDecoration: "none",
-              fontSize: 11,
-              fontFamily: "'Orbitron', sans-serif",
-              letterSpacing: 1,
-              whiteSpace: "nowrap",
-            }}
-          >
-            OPEN
-          </a>
 
           <a
             href={content?.pdf_url}
@@ -334,6 +440,21 @@ export default function PDFViewer() {
           </a>
         </div>
       </div>
+
+      {shareStatus && (
+        <div role="status" style={{
+          padding: "8px 16px",
+          background: isLight ? "rgba(2,132,199,0.07)" : "rgba(0,240,255,0.08)",
+          borderBottom: isLight ? "1px solid rgba(2,132,199,0.16)" : "1px solid rgba(0,240,255,0.16)",
+          color: isLight ? "#0284c7" : "#67e8f9",
+          fontSize: 11,
+          textAlign: "center",
+          fontFamily: "'Orbitron', sans-serif",
+          letterSpacing: 1,
+        }}>
+          {shareStatus}
+        </div>
+      )}
 
       {downloadError && (
         <div role="alert" style={{
@@ -387,9 +508,30 @@ export default function PDFViewer() {
               }}>
                 {content?.title}
               </h2>
-              <p style={{ fontSize: 12, color: isLight ? "#64748b" : "rgba(255,255,255,0.45)", marginBottom: 22 }}>
+              <p style={{
+                fontSize: 12,
+                color: isLight ? "#64748b" : "rgba(255,255,255,0.45)",
+                marginBottom: metadataParts.length || lastViewedAt ? 10 : 22,
+              }}>
                 {content?.subjects?.name}
               </p>
+
+              {(metadataParts.length > 0 || lastViewedAt) && (
+                <div style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  gap: "6px 14px",
+                  marginBottom: 22,
+                  color: isLight ? "#0284c7" : "rgba(0,240,255,0.65)",
+                  fontSize: 10.5,
+                  fontFamily: "'Orbitron', sans-serif",
+                  letterSpacing: 0.5,
+                }}>
+                  {metadataParts.map(part => <span key={part}>{part}</span>)}
+                  {lastViewedAt && <span>LAST OPENED {formatRelativeTime(lastViewedAt).toUpperCase()}</span>}
+                </div>
+              )}
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <a
@@ -433,6 +575,51 @@ export default function PDFViewer() {
                 >
                   {downloading ? "SAVING..." : downloaded ? "DOWNLOADED" : "DOWNLOAD PDF"}
                 </button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={handleBookmark}
+                    aria-pressed={bookmarked}
+                    className="wv-action-btn"
+                    style={{
+                      flex: 1,
+                      minHeight: 44,
+                      padding: "11px 10px",
+                      background: bookmarked
+                        ? (isLight ? "rgba(2,132,199,0.14)" : "rgba(0,240,255,0.12)")
+                        : "transparent",
+                      border: isLight ? "1px solid rgba(2,132,199,0.3)" : "1px solid rgba(0,240,255,0.25)",
+                      borderRadius: 10,
+                      color: isLight ? "#0284c7" : "#00f0ff",
+                      cursor: "pointer",
+                      fontSize: 10.5,
+                      fontFamily: "'Orbitron', sans-serif",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {bookmarked ? "REMOVE FROM SAVED" : "SAVE FOR LATER"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="wv-action-btn"
+                    style={{
+                      flex: "0 0 96px",
+                      minHeight: 44,
+                      padding: "11px 10px",
+                      background: "transparent",
+                      border: isLight ? "1px solid rgba(2,132,199,0.3)" : "1px solid rgba(0,240,255,0.25)",
+                      borderRadius: 10,
+                      color: isLight ? "#0284c7" : "#00f0ff",
+                      cursor: "pointer",
+                      fontSize: 10.5,
+                      fontFamily: "'Orbitron', sans-serif",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    SHARE
+                  </button>
+                </div>
               </div>
 
               <p style={{

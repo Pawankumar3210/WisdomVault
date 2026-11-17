@@ -12,10 +12,16 @@ A modern, mobile-first academic resource platform built for CSE 5th Semester stu
 
 ### For Students
 - 🔍 **Instant Search** — Search notes, question banks and papers in real time, with shared caching
-- 📄 **PDF Viewer** — Read documents directly inside the website
+- ⌨️ **Keyboard Search** — Press `/` to focus search; zero-result searches suggest relevant subjects
+- 📄 **PDF Viewer** — Read documents inside the site with file size, page count and last-opened details
+- 🔗 **Share** — Share a document through the native share sheet or copy its link
+- 👁️ **Recently Viewed** — Pick up where you left off from the home page
+- 🔖 **Saved Documents** — Bookmark PDFs from the viewer or subject cards for later
 - ⬇️ **Download** — Download any PDF to your device
 - 📱 **Mobile First** — Fully optimized for phones and tablets
 - 🌙 **Dark / Light Mode** — Toggle between dark and cream light mode
+
+Recently viewed and saved documents are stored in the browser using `localStorage`. They are device-local, require no account, and can be cleared through the home page or browser site data.
 
 ### For Admin
 - 🔐 **Secure Admin Login** — Protected dashboard access
@@ -46,19 +52,27 @@ src/
 │   ├── Header.jsx
 │   ├── SearchBar.jsx
 │   ├── SubjectCard.jsx
-│   ├── Footer.jsx
-│   ├── ParticleBackground.jsx
-│   ├── AnimatedCounter.jsx
-│   ├── TypewriterText.jsx
-│   ├── FuturisticLoader.jsx
-│   └── TopLoadingBar.jsx
+│   ├── PersonalLibrary.jsx
+│   ├── ThemeToggle.jsx
+│   ├── ErrorBoundary.jsx
+│   └── ...
 ├── pages/
 │   ├── Home.jsx
 │   ├── AdminLogin.jsx
 │   ├── AdminDashboard.jsx
 │   └── PDFViewer.jsx
 ├── lib/
-│   └── supabase.js
+│   ├── supabase.js
+│   ├── contentCache.js
+│   ├── search.js
+│   ├── userLibrary.js
+│   ├── useUserLibrary.js
+│   ├── pdfMetadata.js
+│   ├── share.js
+│   ├── format.js
+│   ├── analytics.js
+│   ├── monitoring.js
+│   └── usePageMeta.js
 ├── App.js
 └── index.css
 ```
@@ -68,7 +82,7 @@ src/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 24.x (see `package.json` engines)
 - npm
 - Supabase account
 
@@ -76,8 +90,8 @@ src/
 
 ```bash
 # Clone the repository
-git clone https://github.com/Pawankumar3210/wisdomvaultnext.git
-cd wisdomvaultnext
+git clone https://github.com/Pawankumar3210/WisdomVault.git
+cd WisdomVault
 
 # Install dependencies
 npm install --legacy-peer-deps
@@ -108,6 +122,12 @@ npm start
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Tests
+
+```bash
+CI=true npm test -- --watchAll=false
+```
 
 ---
 
@@ -141,7 +161,7 @@ The project is deployed on **Vercel** with the following configuration:
 
 ```json
 {
-  "buildCommand": "CI=false react-scripts build",
+  "buildCommand": "CI=false npm run build",
   "outputDirectory": "build",
   "framework": null
 }

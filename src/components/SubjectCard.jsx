@@ -2,10 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { downloadPdf } from "../lib/download";
+import { trackEvent } from "../lib/analytics";
+import useUserLibrary from "../lib/useUserLibrary";
 
 export default function SubjectCard({ subject, contents, expanded, onExpand, onCollapse, index = 0 }) {
   const navigate = useNavigate();
   const { isLight } = useTheme();
+  const { bookmarks, toggleBookmark } = useUserLibrary();
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadedId, setDownloadedId] = useState(null);
   const [downloadError, setDownloadError] = useState(null);
@@ -30,6 +33,18 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
       setDownloadingId(current => (current === item.id ? null : current));
     }
   };
+
+  const handleBookmark = (item) => {
+    const saved = toggleBookmark(item.id);
+    trackEvent("document_bookmark", {
+      type: item.type,
+      subject: subject.code,
+      action: saved ? "saved" : "removed",
+      source: "subject_card",
+    });
+  };
+
+  const isItemSaved = (id) => bookmarks.some(bookmark => bookmark.id === id);
 
   const handleKeyDown = (event) => {
     if (expanded) return;
@@ -220,7 +235,7 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
                     }}>
                       {item.title}
                     </div>
-                    <div style={{ display: "flex", gap: 10 }}>
+                    <div style={{ display: "flex", gap: 8 }}>
                       <button
                         onClick={() => navigate(`/pdf/${item.id}`)}
                         aria-label={`View ${item.title}`}
@@ -259,6 +274,31 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
                           : downloadedId === item.id
                             ? "SAVED"
                             : "⬇️ DOWNLOAD"}
+                      </button>
+                      <button
+                        onClick={() => handleBookmark(item)}
+                        aria-label={`${isItemSaved(item.id) ? "Remove" : "Save"} ${item.title} ${isItemSaved(item.id) ? "from" : "to"} saved documents`}
+                        aria-pressed={isItemSaved(item.id)}
+                        className="wv-action-btn"
+                        style={{
+                          flex: "0 0 42px",
+                          minHeight: 40,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 0,
+                          background: isItemSaved(item.id)
+                            ? (isLight ? `${section.color}22` : `${section.color}20`)
+                            : "transparent",
+                          border: isLight ? `1px solid ${section.color}50` : `1px solid ${section.color}40`,
+                          borderRadius: 8,
+                          color: section.color,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill={isItemSaved(item.id) ? "currentColor" : "none"} aria-hidden="true">
+                          <path d="M6 4h12v16l-6-4-6 4V4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                        </svg>
                       </button>
                     </div>
                     {downloadError?.id === item.id && (
