@@ -356,6 +356,21 @@ body.light-mode ::selection {
   animation: wv-fade-in 0.5s ease both;
 }
 
+.wv-share-toast {
+  animation: wv-share-toast-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes wv-share-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 16px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
 .wv-pwa-in {
   animation: wv-pwa-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

@@ -34,7 +34,7 @@ export default function PDFViewer() {
   const [showInline, setShowInline] = useState(false);
   const [metadata, setMetadata] = useState({ fileSize: null, pageCount: null });
   const [lastViewedAt, setLastViewedAt] = useState(null);
-  const [shareStatus, setShareStatus] = useState("");
+  const [shareNotice, setShareNotice] = useState(null);
   const trackedView = useRef(false);
   const { isLight } = useTheme();
   const { bookmarks, toggleBookmark } = useUserLibrary();
@@ -99,10 +99,10 @@ export default function PDFViewer() {
   }, [content?.pdf_url]);
 
   useEffect(() => {
-    if (!shareStatus) return undefined;
-    const timer = setTimeout(() => setShareStatus(""), 2600);
+    if (!shareNotice) return undefined;
+    const timer = setTimeout(() => setShareNotice(null), 4500);
     return () => clearTimeout(timer);
-  }, [shareStatus]);
+  }, [shareNotice]);
 
   usePageMeta({
     title: content?.title || (error ? "Document unavailable" : "Loading document"),
@@ -184,6 +184,7 @@ export default function PDFViewer() {
 
   const handleShare = async () => {
     if (!content) return;
+    setShareNotice(null);
 
     try {
       const result = await sharePdf({
@@ -192,9 +193,25 @@ export default function PDFViewer() {
         path: `/pdf/${content.id}`,
       });
 
-      if (result.status === "shared") setShareStatus("SHARED");
-      else if (result.status === "copied") setShareStatus("LINK COPIED");
-      else if (result.status === "failed") setShareStatus("COULD NOT SHARE LINK");
+      if (result.status === "shared") {
+        setShareNotice({
+          kind: "success",
+          title: "Document shared",
+          message: "The link is ready to send.",
+        });
+      } else if (result.status === "copied") {
+        setShareNotice({
+          kind: "success",
+          title: "Link copied",
+          message: "Paste it anywhere to share this document.",
+        });
+      } else if (result.status === "failed") {
+        setShareNotice({
+          kind: "error",
+          title: "Couldn't copy the link",
+          message: "Please try again, or download the PDF instead.",
+        });
+      }
 
       trackEvent("document_share", {
         type: content.type,
@@ -202,7 +219,11 @@ export default function PDFViewer() {
         method: result.status,
       });
     } catch {
-      setShareStatus("COULD NOT SHARE LINK");
+      setShareNotice({
+        kind: "error",
+        title: "Couldn't share the document",
+        message: "Please try again, or download the PDF instead.",
+      });
     }
   };
 
@@ -441,21 +462,6 @@ export default function PDFViewer() {
         </div>
       </div>
 
-      {shareStatus && (
-        <div role="status" style={{
-          padding: "8px 16px",
-          background: isLight ? "rgba(2,132,199,0.07)" : "rgba(0,240,255,0.08)",
-          borderBottom: isLight ? "1px solid rgba(2,132,199,0.16)" : "1px solid rgba(0,240,255,0.16)",
-          color: isLight ? "#0284c7" : "#67e8f9",
-          fontSize: 11,
-          textAlign: "center",
-          fontFamily: "'Orbitron', sans-serif",
-          letterSpacing: 1,
-        }}>
-          {shareStatus}
-        </div>
-      )}
-
       {downloadError && (
         <div role="alert" style={{
           padding: "10px 16px",
@@ -664,6 +670,105 @@ export default function PDFViewer() {
           </div>
         )}
       </main>
+
+      <div className="wv-sr-only" role="status" aria-live="polite">
+        {shareNotice ? `${shareNotice.title}. ${shareNotice.message}` : ""}
+      </div>
+
+      {shareNotice && (() => {
+        const noticeColor = shareNotice.kind === "error"
+          ? (isLight ? "#dc2626" : "#ff6b6b")
+          : (isLight ? "#059669" : "#10b981");
+
+        return (
+          <div className="wv-share-toast" role="presentation" style={{
+            position: "fixed",
+            left: "50%",
+            top: "50%",
+            zIndex: 2000,
+            width: "min(430px, calc(100vw - 32px))",
+            boxSizing: "border-box",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "14px 14px 14px 16px",
+            background: isLight ? "rgba(250,243,224,0.98)" : "rgba(8,16,32,0.98)",
+            border: `1px solid ${noticeColor}66`,
+            borderRadius: 12,
+            boxShadow: isLight
+              ? "0 16px 40px rgba(0,0,0,0.16)"
+              : "0 16px 40px rgba(0,0,0,0.55), 0 0 24px rgba(0,240,255,0.06)",
+            backdropFilter: "blur(18px)",
+            transform: "translate(-50%, -50%)",
+          }}>
+            <span aria-hidden="true" style={{
+              flex: "0 0 36px",
+              width: 36,
+              height: 36,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "50%",
+              background: `${noticeColor}18`,
+              border: `1px solid ${noticeColor}45`,
+              color: noticeColor,
+            }}>
+              {shareNotice.kind === "error" ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 7v6M12 17h.01" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 12.5l4.2 4.2L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </span>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                color: isLight ? "#1e293b" : "#e0f0ff",
+                fontSize: 13.5,
+                fontWeight: 700,
+                lineHeight: 1.35,
+              }}>
+                {shareNotice.title}
+              </div>
+              <div style={{
+                marginTop: 3,
+                color: isLight ? "#64748b" : "rgba(255,255,255,0.55)",
+                fontSize: 11.5,
+                lineHeight: 1.5,
+              }}>
+                {shareNotice.message}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShareNotice(null)}
+              aria-label="Dismiss notification"
+              style={{
+                flex: "0 0 30px",
+                width: 30,
+                height: 30,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                background: "transparent",
+                border: "none",
+                borderRadius: 6,
+                color: isLight ? "#64748b" : "rgba(255,255,255,0.45)",
+                cursor: "pointer",
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        );
+      })()}
     </div>
   );
 }
