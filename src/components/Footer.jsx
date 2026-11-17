@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTheme } from "../context/ThemeContext";
+import useDialogA11y from "../lib/useDialogA11y";
 
 const TEAM = [
   {
@@ -102,6 +103,9 @@ export default function Footer() {
     }, 220);
   };
 
+  const teamDialogRef = useDialogA11y(showTeam, closeTeam);
+  const contributorsDialogRef = useDialogA11y(showContributors, closeContributors);
+
   return (
     <>
       {/* TEAM MODAL */}
@@ -122,7 +126,12 @@ export default function Footer() {
           }}
         >
           <div
+            ref={teamDialogRef}
             className="wv-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="team-dialog-title"
+            tabIndex={-1}
             style={{
               width: "100%",
               maxWidth: 400,
@@ -168,12 +177,13 @@ export default function Footer() {
             >
               <button
                 onClick={closeTeam}
+                aria-label="Close team dialog"
                 style={{
                   position: "absolute",
                   top: 14,
                   right: 14,
-                  width: 28,
-                  height: 28,
+                  width: 36,
+                  height: 36,
                   background: isLight ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.05)",
                   border: isLight ? "1px solid rgba(239,68,68,0.4)" : "1px solid red",
                   borderRadius: 8,
@@ -213,6 +223,7 @@ export default function Footer() {
               </div>
 
               <div
+                id="team-dialog-title"
                 style={{
                   fontFamily: "'Orbitron', sans-serif",
                   fontSize: 16,
@@ -305,7 +316,7 @@ export default function Footer() {
                     <a
                       href={member.linkedin}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -337,8 +348,10 @@ export default function Footer() {
 
             {/* CONTENT CONTRIBUTORS LINK */}
             <div style={{ padding: "0 16px 10px", textAlign: "center" }}>
-              <span
+              <button
+                type="button"
                 onClick={() => setShowContributors(true)}
+                aria-haspopup="dialog"
                 style={{
                   cursor: "pointer",
                   color: isLight ? "#d97706" : "#fbbf24",
@@ -352,10 +365,13 @@ export default function Footer() {
                     ? "0 0 10px rgba(217, 119, 6, 0.25)"
                     : "0 0 10px rgba(251, 191, 36, 0.6), 0 0 20px rgba(251, 191, 36, 0.3)",
                   transition: "all 0.2s",
+                  background: "none",
+                  border: "none",
+                  padding: 8,
                 }}
               >
                 ✨ Content Contributors
-              </span>
+              </button>
             </div>
 
             {/* SEPARATOR LINE */}
@@ -402,7 +418,12 @@ export default function Footer() {
           }}
         >
           <div
+            ref={contributorsDialogRef}
             className="wv-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contributors-dialog-title"
+            tabIndex={-1}
             style={{
               width: "100%",
               maxWidth: 320,
@@ -432,12 +453,13 @@ export default function Footer() {
             >
               <button
                 onClick={closeContributors}
+                aria-label="Close content contributors dialog"
                 style={{
                   position: "absolute",
                   top: 10,
                   right: 10,
-                  width: 28,
-                  height: 28,
+                  width: 36,
+                  height: 36,
                   background: isLight ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.05)",
                   border: isLight ? "1px solid rgba(239,68,68,0.4)" : "1px solid red",
                   borderRadius: 8,
@@ -453,6 +475,7 @@ export default function Footer() {
               </button>
 
               <div
+                id="contributors-dialog-title"
                 style={{
                   fontFamily: "'Orbitron', sans-serif",
                   fontSize: 14,
@@ -515,7 +538,7 @@ export default function Footer() {
                     <a
                       href={contributor.linkedin}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -605,7 +628,9 @@ export default function Footer() {
           </span>
 
           <button
+            type="button"
             onClick={() => setShowTeam(true)}
+            aria-haspopup="dialog"
             style={{
               background: "none",
               border: "none",

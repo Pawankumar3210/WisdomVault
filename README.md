@@ -11,7 +11,7 @@ A modern, mobile-first academic resource platform built for CSE 5th Semester stu
 ## ✨ Features
 
 ### For Students
-- 🔍 **Instant Search** — Search notes, question banks and papers in real time
+- 🔍 **Instant Search** — Search notes, question banks and papers in real time, with shared caching
 - 📄 **PDF Viewer** — Read documents directly inside the website
 - ⬇️ **Download** — Download any PDF to your device
 - 📱 **Mobile First** — Fully optimized for phones and tablets
@@ -93,7 +93,13 @@ Create a `.env` file in the root directory:
 ```env
 REACT_APP_SUPABASE_URL=your_supabase_project_url
 REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+REACT_APP_SITE_URL=https://wisdomvaultnext.vercel.app
+REACT_APP_SENTRY_DSN=optional_sentry_dsn
 ```
+
+`REACT_APP_SITE_URL` is used for canonical links, social metadata, and sitemap generation. `REACT_APP_SENTRY_DSN` is optional; error monitoring is disabled when it is blank.
+
+`npm run build` regenerates `public/sitemap.xml` before creating the production bundle.
 
 ### Run Locally
 

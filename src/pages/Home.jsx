@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import SearchBar from "../components/SearchBar";
 import SubjectCard from "../components/SubjectCard";
@@ -10,30 +9,54 @@ import AnimatedCounter from "../components/AnimatedCounter";
 import TypewriterText from "../components/TypewriterText";
 import Footer from "../components/Footer";
 import Reveal from "../components/Reveal";
+import { fetchVaultData } from "../lib/contentCache";
+import { usePageMeta } from "../lib/usePageMeta";
 
 export default function Home() {
   const [subjects, setSubjects] = useState([]);
   const [contents, setContents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const filterSubject = searchParams.get("subject");
   const openSubject = searchParams.get("open");
   const expandedSubjectId = filterSubject || openSubject;
   const { isLight } = useTheme();
 
-  useEffect(() => {
-    fetchData();
+  usePageMeta({
+    title: "CSE 5th Semester Notes, Question Banks & Papers",
+    description:
+      "Access CSE 5th Semester notes, question banks, and previous year papers instantly on Wisdom Vault.",
+    path: "/",
+  });
+
+  const fetchData = useCallback(async (force = false) => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await fetchVaultData({ force });
+      setSubjects(data.subjects);
+      setContents(data.contents);
+    } catch {
+      setError("Could not load the vault. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (loading || !expandedSubjectId) return;
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (loading || error || !expandedSubjectId) return;
     const card = document.getElementById(`subject-card-${expandedSubjectId}`);
     if (card) {
       requestAnimationFrame(() =>
         card.scrollIntoView({ behavior: "auto", block: "start" })
       );
     }
-  }, [loading, expandedSubjectId]);
+  }, [loading, error, expandedSubjectId]);
 
   const handleExpand = (subjectId) => {
     const next = new URLSearchParams(searchParams);
@@ -47,21 +70,6 @@ export default function Home() {
     next.delete("subject");
     next.delete("open");
     setSearchParams(next, { replace: true });
-  };
-
-  const fetchData = async () => {
-    setLoading(true);
-    const { data: subData } = await supabase
-      .from("subjects")
-      .select("*")
-      .order("name");
-    const { data: conData } = await supabase
-      .from("content")
-      .select("*, subjects(name)")
-      .order("created_at", { ascending: false });
-    setSubjects(subData || []);
-    setContents(conData || []);
-    setLoading(false);
   };
 
   const filteredSubjects = expandedSubjectId
@@ -81,7 +89,8 @@ export default function Home() {
       <TopLoadingBar loading={loading} />
 
       {/* WRAPPER FOR MAIN CONTENT TO PUSH FOOTER DOWN */}
-      <div style={{ flex: 1 }}>
+      <main id="main-content" tabIndex={-1} style={{ flex: 1 }}>
+        <h1 className="wv-sr-only">Wisdom Vault CSE 5th Semester Notes, Question Banks and Previous Papers</h1>
         {/* HERO SECTION */}
         <div
           style={{
@@ -190,8 +199,8 @@ export default function Home() {
               >
                 Filtered by subject
               </div>
-              <a
-                href="/"
+              <Link
+                to="/"
                 style={{
                   fontSize: 12,
                   color: isLight ? "#0284c7" : "#00f0ff",
@@ -206,12 +215,37 @@ export default function Home() {
                 }}
               >
                 ← Show All
-              </a>
+              </Link>
             </div>
           )}
 
           {loading ? (
             <FuturisticLoader text="LOADING VAULT" />
+          ) : error ? (
+            <div role="alert" style={{
+              padding: "32px 20px",
+              textAlign: "center",
+              border: isLight ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(255,96,96,0.3)",
+              borderRadius: 14,
+              background: isLight ? "rgba(239,68,68,0.05)" : "rgba(255,60,60,0.06)",
+            }}>
+              <p style={{ color: isLight ? "#b91c1c" : "#ff9090", fontSize: 14, marginBottom: 14 }}>
+                {error}
+              </p>
+              <button type="button" onClick={() => fetchData(true)} className="wv-action-btn" style={{
+                padding: "10px 18px",
+                border: isLight ? "1px solid rgba(2,132,199,0.35)" : "1px solid rgba(0,240,255,0.3)",
+                borderRadius: 8,
+                background: "transparent",
+                color: isLight ? "#0284c7" : "#00f0ff",
+                cursor: "pointer",
+                fontFamily: "'Orbitron', sans-serif",
+                fontSize: 11,
+                letterSpacing: 1,
+              }}>
+                TRY AGAIN
+              </button>
+            </div>
           ) : filteredSubjects.length === 0 ? (
             <div
               style={{
@@ -262,7 +296,7 @@ export default function Home() {
             </Reveal>
           )}
         </div>
-      </div>
+      </main>
 
       {/* FOOTER PLACEMENT */}
       <Footer />

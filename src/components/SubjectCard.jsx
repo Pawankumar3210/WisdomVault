@@ -1,31 +1,41 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import { downloadPdf } from "../lib/download";
 
 export default function SubjectCard({ subject, contents, expanded, onExpand, onCollapse, index = 0 }) {
   const navigate = useNavigate();
   const { isLight } = useTheme();
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadedId, setDownloadedId] = useState(null);
+  const [downloadError, setDownloadError] = useState(null);
 
   const handleDownload = async (item) => {
     if (downloadingId) return;
     setDownloadingId(item.id);
+    setDownloadError(null);
     try {
-      const res = await fetch(item.pdf_url);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${item.title}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      await downloadPdf(item.pdf_url, item.title, {
+        type: item.type,
+        subject: subject.code,
+        source: "subject_card",
+      });
       setDownloadedId(item.id);
       setTimeout(() => {
         setDownloadedId(current => (current === item.id ? null : current));
       }, 2200);
+    } catch (error) {
+      setDownloadError({ id: item.id, message: error.message });
     } finally {
       setDownloadingId(current => (current === item.id ? null : current));
+    }
+  };
+
+  const handleKeyDown = (event) => {
+    if (expanded) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onExpand?.();
     }
   };
 
@@ -57,6 +67,11 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
     <div 
       id={`subject-card-${subject.id}`}
       className="wv-subject-card"
+      role={!expanded ? "button" : undefined}
+      tabIndex={!expanded ? 0 : undefined}
+      aria-expanded={!expanded ? false : undefined}
+      aria-label={!expanded ? `Open ${subject.name}` : undefined}
+      onKeyDown={handleKeyDown}
       style={{
         background: isLight ? "rgba(244, 235, 206, 0.95)" : "rgba(0,240,255,0.03)",
         border: `1px solid ${defaultBorder}`,
@@ -208,6 +223,7 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
                     <div style={{ display: "flex", gap: 10 }}>
                       <button
                         onClick={() => navigate(`/pdf/${item.id}`)}
+                        aria-label={`View ${item.title}`}
                         className="wv-action-btn"
                         style={{
                           flex: 1, padding: "10px",
@@ -224,6 +240,8 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
                       <button
                         onClick={() => handleDownload(item)}
                         disabled={downloadingId === item.id}
+                        aria-label={`Download ${item.title}`}
+                        aria-busy={downloadingId === item.id}
                         className="wv-action-btn"
                         style={{
                           flex: 1, padding: "10px",
@@ -243,6 +261,16 @@ export default function SubjectCard({ subject, contents, expanded, onExpand, onC
                             : "⬇️ DOWNLOAD"}
                       </button>
                     </div>
+                    {downloadError?.id === item.id && (
+                      <p role="alert" style={{
+                        color: isLight ? "#b91c1c" : "#ff9090",
+                        fontSize: 10.5,
+                        marginTop: 8,
+                        lineHeight: 1.5,
+                      }}>
+                        {downloadError.message}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

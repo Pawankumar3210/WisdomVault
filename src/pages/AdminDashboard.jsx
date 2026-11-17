@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { clearSearchCache } from "../components/SearchBar";
+import { invalidateVaultCache } from "../lib/contentCache";
+import useDialogA11y from "../lib/useDialogA11y";
+import { usePageMeta } from "../lib/usePageMeta";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -77,7 +79,7 @@ export default function AdminDashboard() {
     }
     setSubjectForm({ name: "", code: "" });
     setEditingSubject(null);
-    clearSearchCache();
+    invalidateVaultCache();
     fetchAll();
   };
 
@@ -89,10 +91,19 @@ export default function AdminDashboard() {
     }, 220);
   };
 
+  const confirmDialogRef = useDialogA11y(Boolean(confirmDelete), closeConfirm);
+
+  usePageMeta({
+    title: "Admin Dashboard",
+    description: "Wisdom Vault administration.",
+    path: "/admin",
+    robots: "noindex,nofollow",
+  });
+
   const deleteSubject = async (id) => {
   const { error } = await supabase.from("subjects").delete().eq("id", id);
   if (error) { alert(error.message); return; }
-  clearSearchCache();
+  invalidateVaultCache();
   closeConfirm();
   fetchAll();
 };
@@ -146,7 +157,7 @@ export default function AdminDashboard() {
     setEditingContent(null);
     setPdfFile(null);
     if (fileRef.current) fileRef.current.value = "";
-    clearSearchCache();
+    invalidateVaultCache();
     fetchAll();
     setUploading(false);
   };
@@ -154,7 +165,7 @@ export default function AdminDashboard() {
   const deleteContent = async (id) => {
   const { error } = await supabase.from("content").delete().eq("id", id);
   if (error) { alert(error.message); return; }
-  clearSearchCache();
+  invalidateVaultCache();
   closeConfirm();
   fetchAll();
 };
@@ -222,7 +233,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="wv-fade-in" style={{ minHeight: "100vh", position: "relative", zIndex: 1 }}>
+    <main id="main-content" tabIndex={-1} className="wv-fade-in" style={{ minHeight: "100vh", position: "relative", zIndex: 1 }}>
 
       {/* WELCOME & LOGOUT MESSAGES + MODALS */}
       {showWelcome && (
@@ -239,6 +250,8 @@ export default function AdminDashboard() {
         }}>
           <div
             className="wv-fade-up"
+            role="status"
+            aria-live="polite"
             style={{
               background: "rgba(8, 32, 20, 0.94)",
               backdropFilter: "blur(20px)",
@@ -273,6 +286,8 @@ export default function AdminDashboard() {
         }}>
           <div
             className="wv-fade-up"
+            role="status"
+            aria-live="assertive"
             style={{
               background: "rgba(40, 8, 8, 0.94)",
               backdropFilter: "blur(20px)",
@@ -304,19 +319,30 @@ export default function AdminDashboard() {
             padding: 20,
           }}
         >
-          <div className="wv-modal-panel" style={{
-            background: "#0d0d22",
-            border: "1px solid rgba(255,60,60,0.3)",
-            borderRadius: 16, padding: 28,
-            maxWidth: 340, width: "100%",
-            textAlign: "center",
-          }}>
+          <div
+            ref={confirmDialogRef}
+            className="wv-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-confirm-title"
+            tabIndex={-1}
+            style={{
+              background: "#0d0d22",
+              border: "1px solid rgba(255,60,60,0.3)",
+              borderRadius: 16, padding: 28,
+              maxWidth: 340, width: "100%",
+              textAlign: "center",
+            }}
+          >
             <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
-            <div style={{
-              fontFamily: "'Orbitron', sans-serif",
-              color: "#ff8080", fontSize: 14,
-              letterSpacing: 2, marginBottom: 8,
-            }}>
+            <div
+              id="admin-confirm-title"
+              style={{
+                fontFamily: "'Orbitron', sans-serif",
+                color: "#ff8080", fontSize: 14,
+                letterSpacing: 2, marginBottom: 8,
+              }}
+            >
               CONFIRM DELETE
             </div>
             <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 24 }}>
@@ -348,13 +374,14 @@ export default function AdminDashboard() {
         position: "sticky", top: 0, zIndex: 100,
         backdropFilter: "blur(20px)",
       }}>
-        <div style={{
+        <h1 style={{
+          margin: 0,
           fontFamily: "'Orbitron', sans-serif",
           fontSize: 14, fontWeight: 700,
           color: "#00f0ff", letterSpacing: 3,
         }}>
           ADMIN DASHBOARD
-        </div>
+        </h1>
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={() => navigate("/")} style={btnPrimary}>
             VIEW SITE
@@ -500,8 +527,8 @@ export default function AdminDashboard() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div>
-                  <label style={labelStyle}>SUBJECT NAME</label>
-                  <input style={inputStyle} placeholder="e.g. Data Structures & Algorithms"
+                  <label htmlFor="subject-name" style={labelStyle}>SUBJECT NAME</label>
+                  <input id="subject-name" style={inputStyle} placeholder="e.g. Data Structures & Algorithms"
                     value={subjectForm.name}
                     onChange={e => setSubjectForm({ ...subjectForm, name: e.target.value })}
                     onFocus={e => e.target.style.borderColor = "rgba(0,240,255,0.5)"}
@@ -509,8 +536,8 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>SUBJECT CODE</label>
-                  <input style={inputStyle} placeholder="e.g. CS401"
+                  <label htmlFor="subject-code" style={labelStyle}>SUBJECT CODE</label>
+                  <input id="subject-code" style={inputStyle} placeholder="e.g. CS401"
                     value={subjectForm.code}
                     onChange={e => setSubjectForm({ ...subjectForm, code: e.target.value })}
                     onFocus={e => e.target.style.borderColor = "rgba(0,240,255,0.5)"}
@@ -586,8 +613,8 @@ export default function AdminDashboard() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div>
-                  <label style={labelStyle}>TITLE</label>
-                  <input style={inputStyle}
+                  <label htmlFor="content-title" style={labelStyle}>TITLE</label>
+                  <input id="content-title" style={inputStyle}
                     placeholder={activeTab === "notes" ? "e.g. Unit 1 - Introduction" : activeTab === "qbanks" ? "e.g. Mid Sem QB 2024" : "e.g. End Sem 2023"}
                     value={contentForm.title}
                     onChange={e => setContentForm({ ...contentForm, title: e.target.value })}
@@ -597,8 +624,8 @@ export default function AdminDashboard() {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>SUBJECT</label>
-                  <select style={{ ...inputStyle, cursor: "pointer" }}
+                  <label htmlFor="content-subject" style={labelStyle}>SUBJECT</label>
+                  <select id="content-subject" style={{ ...inputStyle, cursor: "pointer" }}
                     value={contentForm.subject_id}
                     onChange={e => setContentForm({ ...contentForm, subject_id: e.target.value })}
                     onFocus={e => e.target.style.borderColor = "rgba(0,240,255,0.5)"}
@@ -613,7 +640,7 @@ export default function AdminDashboard() {
 
                 {/* DRAG AND DROP - unchanged */}
                 <div>
-                  <label style={labelStyle}>PDF FILE</label>
+                  <label htmlFor="content-pdf" style={labelStyle}>PDF FILE</label>
                   <div
                     onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                     onDragLeave={() => setDragOver(false)}
@@ -624,7 +651,16 @@ export default function AdminDashboard() {
                       if (file && file.type === "application/pdf") setPdfFile(file);
                       else alert("Please drop a PDF file");
                     }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Choose a PDF file"
                     onClick={() => fileRef.current?.click()}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        fileRef.current?.click();
+                      }
+                    }}
                     style={{
                       border: `2px dashed ${dragOver ? "#00f0ff" : "rgba(0,240,255,0.2)"}`,
                       borderRadius: 10,
@@ -658,6 +694,7 @@ export default function AdminDashboard() {
                     )}
                   </div>
                   <input
+                    id="content-pdf"
                     ref={fileRef}
                     type="file"
                     accept=".pdf"
@@ -759,6 +796,6 @@ export default function AdminDashboard() {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.2); border-radius: 2px; }
       `}</style>
-    </div>
+    </main>
   );
 }

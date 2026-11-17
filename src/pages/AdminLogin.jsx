@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { usePageMeta } from "../lib/usePageMeta";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -8,6 +9,13 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  usePageMeta({
+    title: "Admin Login",
+    description: "Authorized Wisdom Vault administration access.",
+    path: "/admin/login",
+    robots: "noindex,nofollow",
+  });
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -50,7 +58,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="wv-fade-in" style={{
+    <main id="main-content" tabIndex={-1} className="wv-fade-in" style={{
       position: "fixed", inset: 0, zIndex: 50,
       background: "#080818",
       overflowY: "auto",
@@ -121,7 +129,7 @@ export default function AdminLogin() {
           </svg>
         </div>
 
-        <h2 style={{
+        <h1 style={{
           fontFamily: "'Orbitron', sans-serif",
           fontSize: 18, fontWeight: 700,
           color: "#00f0ff", textAlign: "center",
@@ -129,7 +137,7 @@ export default function AdminLogin() {
           textShadow: "0 0 15px rgba(0,240,255,0.4)",
         }}>
           ADMIN ACCESS
-        </h2>
+        </h1>
         <p style={{
           textAlign: "center", fontSize: 12,
           color: "rgba(255,255,255,0.3)",
@@ -140,8 +148,9 @@ export default function AdminLogin() {
 
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>EMAIL</label>
+            <label htmlFor="admin-email" style={labelStyle}>EMAIL</label>
             <input
+              id="admin-email"
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
@@ -154,8 +163,9 @@ export default function AdminLogin() {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <label style={labelStyle}>PASSWORD</label>
+            <label htmlFor="admin-password" style={labelStyle}>PASSWORD</label>
             <input
+              id="admin-password"
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -170,6 +180,7 @@ export default function AdminLogin() {
           {error && (
             <div
               key={error}
+              role="alert"
               className="wv-shake"
               style={{
                 padding: "10px 14px",
@@ -219,6 +230,6 @@ export default function AdminLogin() {
         `}</style>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

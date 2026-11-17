@@ -30,6 +30,9 @@ export default function Header() {
         transition: "background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
       }}
     >
+      <a href="#main-content" className="wv-skip-link">
+        Skip to content
+      </a>
       <div
         style={{
           maxWidth: 900,

@@ -1,9 +1,20 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../context/ThemeContext";
 import ThemeToggle from "../components/ThemeToggle";
 import FuturisticLoader from "../components/FuturisticLoader";
+import { downloadPdf } from "../lib/download";
+import { trackEvent } from "../lib/analytics";
+import { usePageMeta } from "../lib/usePageMeta";
+
+function isMobilePdfEnvironment() {
+  if (typeof window === "undefined") return false;
+  const userAgent = navigator.userAgent || "";
+  const isPhoneOrTablet = /iPhone|iPad|iPod|Android/i.test(userAgent);
+  const isIPadDesktopMode = /Macintosh/i.test(userAgent) && navigator.maxTouchPoints > 1;
+  return isPhoneOrTablet || isIPadDesktopMode || window.matchMedia("(max-width: 760px)").matches;
+}
 
 export default function PDFViewer() {
   const { id } = useParams();
@@ -13,26 +24,60 @@ export default function PDFViewer() {
   const [error, setError] = useState(null);
   const [downloading, setDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
+  const [isMobile, setIsMobile] = useState(isMobilePdfEnvironment);
+  const [showInline, setShowInline] = useState(false);
+  const trackedView = useRef(false);
   const { isLight } = useTheme();
-
-  useEffect(() => {
-    fetchContent();
-  }, [id]); // eslint-disable-line
 
   const fetchContent = async () => {
     setLoading(true);
+    setError(null);
     const { data, error: fetchError } = await supabase
       .from("content")
       .select("*, subjects(name)")
       .eq("id", id)
       .single();
+
     if (fetchError) {
-      setError("Content not found");
+      setError("This document could not be found or is temporarily unavailable.");
+      setContent(null);
     } else {
       setContent(data);
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    trackedView.current = false;
+    fetchContent();
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 760px)");
+    const handleChange = () => setIsMobile(isMobilePdfEnvironment());
+    mediaQuery.addEventListener?.("change", handleChange);
+    return () => mediaQuery.removeEventListener?.("change", handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (!content || trackedView.current) return;
+    trackedView.current = true;
+    trackEvent("pdf_view", {
+      type: content.type,
+      subject: content.subjects?.name || "",
+    });
+  }, [content]);
+
+  usePageMeta({
+    title: content?.title || (error ? "Document unavailable" : "Loading document"),
+    description: content
+      ? `${content.title}${content.subjects?.name ? ` from ${content.subjects.name}` : ""} on Wisdom Vault.`
+      : "Read CSE 5th Semester documents on Wisdom Vault.",
+    path: `/pdf/${id}`,
+    type: "article",
+    robots: error ? "noindex,follow" : "index,follow",
+  });
 
   const getTypeColor = (type) => {
     if (isLight) {
@@ -64,92 +109,138 @@ export default function PDFViewer() {
     }
   };
 
-  const handleDownload = async (e) => {
-    e.preventDefault();
-    if (downloading) return;
+  const handleDownload = async (event) => {
+    event.preventDefault();
+    if (downloading || !content?.pdf_url) return;
+
     setDownloading(true);
+    setDownloadError("");
     try {
-      const response = await fetch(content?.pdf_url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${content?.title}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await downloadPdf(content.pdf_url, content.title, {
+        type: content.type,
+        subject: content.subjects?.name || "",
+        source: "pdf_viewer",
+      });
       setDownloaded(true);
       setTimeout(() => setDownloaded(false), 2200);
+    } catch (downloadFailure) {
+      setDownloadError(downloadFailure.message);
     } finally {
       setDownloading(false);
     }
   };
 
+  const handleOpenPdf = () => {
+    if (!content?.pdf_url) return;
+    trackEvent("pdf_open_external", {
+      type: content.type,
+      subject: content.subjects?.name || "",
+    });
+  };
+
   if (loading) return <FuturisticLoader text="LOADING DOCUMENT" />;
 
-  if (error) return (
-    <div style={{
-      minHeight: "100vh", display: "flex",
-      alignItems: "center", justifyContent: "center",
-      flexDirection: "column", gap: 16, padding: 20,
-    }}>
-      <div style={{ fontSize: 48, color: isLight ? "#dc2626" : "#ff6060" }}>!</div>
+  if (error) {
+    return (
       <div style={{
-        fontFamily: "'Orbitron', sans-serif",
-        color: isLight ? "#dc2626" : "#ff6060",
-        fontSize: 16, letterSpacing: 2,
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: 16,
+        padding: 20,
+        textAlign: "center",
       }}>
-        {error}
+        <div style={{ fontSize: 48, color: isLight ? "#dc2626" : "#ff6060" }}>!</div>
+        <div
+          role="alert"
+          style={{
+            fontFamily: "'Orbitron', sans-serif",
+            color: isLight ? "#dc2626" : "#ff6060",
+            fontSize: 16,
+            letterSpacing: 2,
+            maxWidth: 480,
+            lineHeight: 1.6,
+          }}
+        >
+          {error}
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+          <button onClick={fetchContent} className="wv-action-btn" style={{
+            padding: "10px 24px",
+            background: isLight ? "rgba(2,132,199,0.08)" : "rgba(0,240,255,0.08)",
+            border: isLight ? "1px solid rgba(2,132,199,0.35)" : "1px solid rgba(0,240,255,0.3)",
+            borderRadius: 8,
+            color: isLight ? "#0284c7" : "#00f0ff",
+            cursor: "pointer",
+            fontSize: 13,
+            fontFamily: "'Orbitron', sans-serif",
+          }}>
+            TRY AGAIN
+          </button>
+          <button onClick={() => navigate("/")} className="wv-action-btn" style={{
+            padding: "10px 24px",
+            background: "transparent",
+            border: isLight ? "1px solid rgba(2,132,199,0.35)" : "1px solid rgba(0,240,255,0.3)",
+            borderRadius: 8,
+            color: isLight ? "#0284c7" : "#00f0ff",
+            cursor: "pointer",
+            fontSize: 13,
+            fontFamily: "'Orbitron', sans-serif",
+          }}>
+            BACK TO HOME
+          </button>
+        </div>
       </div>
-      <button onClick={() => navigate("/")} className="wv-action-btn" style={{
-        padding: "10px 24px",
-        background: isLight ? "rgba(2,132,199,0.08)" : "rgba(0,240,255,0.08)",
-        border: isLight ? "1px solid rgba(2,132,199,0.35)" : "1px solid rgba(0,240,255,0.3)",
-        borderRadius: 8,
-        color: isLight ? "#0284c7" : "#00f0ff",
-        cursor: "pointer", fontSize: 13,
-        fontFamily: "'Orbitron', sans-serif",
-      }}>
-        BACK TO HOME
-      </button>
-    </div>
-  );
+    );
+  }
+
+  const typeColor = getTypeColor(content?.type);
 
   return (
-    <div style={{ minHeight: "100vh", position: "relative", zIndex: 1 }}>
-
-      {/* TOP BAR */}
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", zIndex: 1 }}>
       <div className="wv-pdf-toolbar" style={{
         background: isLight ? "rgba(250, 243, 224, 0.95)" : "rgba(8,8,24,0.9)",
         backdropFilter: "blur(20px)",
         borderBottom: isLight ? "1px solid rgba(2, 132, 199, 0.18)" : "1px solid rgba(0,240,255,0.15)",
         boxShadow: isLight ? "0 2px 10px rgba(0,0,0,0.04)" : "none",
-        padding: "12px 16px",
+        padding: "10px 12px",
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        position: "sticky", top: 0, zIndex: 10,
+        gap: 8,
+        flexWrap: "wrap",
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
         transition: "background 0.3s ease, border-color 0.3s ease",
       }}>
-        <button onClick={handleBack} className="wv-action-btn" style={{
-          display: "flex", alignItems: "center", gap: 6,
-          padding: "8px 14px",
+        <button onClick={handleBack} aria-label="Go back" className="wv-action-btn" style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "9px 12px",
+          minHeight: 40,
           background: isLight ? "rgba(2,132,199,0.08)" : "rgba(0,240,255,0.06)",
           border: isLight ? "1px solid rgba(2,132,199,0.3)" : "1px solid rgba(0,240,255,0.2)",
           borderRadius: 8,
           color: isLight ? "#0284c7" : "#00f0ff",
-          cursor: "pointer", fontSize: 12,
+          cursor: "pointer",
+          fontSize: 11,
           fontFamily: "'Orbitron', sans-serif",
-          letterSpacing: 1, flexShrink: 0,
-          transition: "all 0.2s ease",
+          letterSpacing: 1,
+          flexShrink: 0,
         }}>
-          BACK
+          ← BACK
         </button>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: "1 1 180px", minWidth: 0 }}>
           <div style={{
-            fontSize: 14, fontWeight: 600,
+            fontSize: 14,
+            fontWeight: 600,
             color: isLight ? "#0f172a" : "#e0f0ff",
-            overflow: "hidden", textOverflow: "ellipsis",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
             whiteSpace: "nowrap",
           }}>
             {content?.title}
@@ -158,28 +249,59 @@ export default function PDFViewer() {
             fontSize: 11,
             color: isLight ? "#64748b" : "rgba(255,255,255,0.4)",
             marginTop: 2,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
           }}>
             {content?.subjects?.name}
           </div>
         </div>
 
-        {/* TOP BAR THEME TOGGLE */}
         <div style={{ flexShrink: 0 }}>
           <ThemeToggle />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
           <span style={{
-            fontSize: 9, fontWeight: 700,
-            padding: "3px 8px", borderRadius: 4,
-            color: getTypeColor(content?.type),
-            background: `${getTypeColor(content?.type)}18`,
-            border: `1px solid ${getTypeColor(content?.type)}40`,
+            fontSize: 9,
+            fontWeight: 700,
+            padding: "4px 8px",
+            borderRadius: 4,
+            color: typeColor,
+            background: `${typeColor}18`,
+            border: `1px solid ${typeColor}40`,
             fontFamily: "'Orbitron', sans-serif",
             letterSpacing: 1,
+            display: isMobile ? "none" : "inline",
           }}>
             {getTypeLabel(content?.type)}
           </span>
+
+          <a
+            href={content?.pdf_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleOpenPdf}
+            className="wv-action-btn"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "9px 12px",
+              minHeight: 40,
+              background: isLight ? "rgba(2,132,199,0.06)" : "rgba(0,240,255,0.06)",
+              border: isLight ? "1px solid rgba(2,132,199,0.3)" : "1px solid rgba(0,240,255,0.25)",
+              borderRadius: 8,
+              color: isLight ? "#0284c7" : "#00f0ff",
+              textDecoration: "none",
+              fontSize: 11,
+              fontFamily: "'Orbitron', sans-serif",
+              letterSpacing: 1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            OPEN
+          </a>
 
           <a
             href={content?.pdf_url}
@@ -187,19 +309,25 @@ export default function PDFViewer() {
             rel="noreferrer"
             className="wv-action-btn"
             aria-busy={downloading}
+            aria-live="polite"
             style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "8px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "9px 12px",
+              minHeight: 40,
               background: isLight ? "rgba(2,132,199,0.1)" : "rgba(0,240,255,0.1)",
               border: isLight ? "1px solid rgba(2,132,199,0.35)" : "1px solid rgba(0,240,255,0.3)",
               borderRadius: 8,
               color: isLight ? "#0284c7" : "#00f0ff",
-              textDecoration: "none", fontSize: 12,
+              textDecoration: "none",
+              fontSize: 11,
               fontFamily: "'Orbitron', sans-serif",
               letterSpacing: 1,
               transition: "all 0.2s ease",
               cursor: downloading ? "wait" : "pointer",
               pointerEvents: downloading ? "none" : "auto",
+              whiteSpace: "nowrap",
             }}
           >
             {downloading ? "SAVING..." : downloaded ? "SAVED" : "DOWNLOAD"}
@@ -207,19 +335,148 @@ export default function PDFViewer() {
         </div>
       </div>
 
-      {/* PDF VIEWER */}
-      <div className="wv-pdf-frame" style={{
-        width: "100%",
-        height: "calc(100vh - 70px)",
-        background: isLight ? "#EFE2C5" : "#1a1a2e",
-        transition: "background 0.3s ease",
-      }}>
-        <iframe
-          src={content?.pdf_url ? `${content.pdf_url}#toolbar=1&navpanes=0` : ""}
-          title={content?.title || "PDF Viewer"}
-          style={{ width: "100%", height: "100%", border: "none" }}
-        />
-      </div>
+      {downloadError && (
+        <div role="alert" style={{
+          padding: "10px 16px",
+          background: isLight ? "rgba(239,68,68,0.08)" : "rgba(255,60,60,0.1)",
+          borderBottom: isLight ? "1px solid rgba(239,68,68,0.2)" : "1px solid rgba(255,60,60,0.2)",
+          color: isLight ? "#b91c1c" : "#ff9090",
+          fontSize: 12,
+          textAlign: "center",
+        }}>
+          {downloadError}
+        </div>
+      )}
+
+      <main id="main-content" tabIndex={-1} style={{ flex: 1, minHeight: 0, display: "flex" }}>
+        <h1 className="wv-sr-only">{content?.title}</h1>
+        {isMobile && !showInline ? (
+          <div style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "28px 18px",
+            background: isLight ? "#EFE2C5" : "#101024",
+          }}>
+            <div style={{
+              width: "100%",
+              maxWidth: 420,
+              textAlign: "center",
+              padding: 26,
+              background: isLight ? "rgba(250,243,224,0.98)" : "rgba(8,8,30,0.96)",
+              border: isLight ? "1px solid rgba(2,132,199,0.25)" : "1px solid rgba(0,240,255,0.2)",
+              borderRadius: 18,
+              boxShadow: isLight ? "0 12px 36px rgba(0,0,0,0.1)" : "0 0 40px rgba(0,240,255,0.08)",
+            }}>
+              <div aria-hidden="true" style={{ fontSize: 46, marginBottom: 12 }}>📄</div>
+              <div style={{
+                fontSize: 10,
+                color: typeColor,
+                fontFamily: "'Orbitron', sans-serif",
+                letterSpacing: 2,
+                marginBottom: 8,
+              }}>
+                {getTypeLabel(content?.type)}
+              </div>
+              <h2 style={{
+                fontSize: 18,
+                lineHeight: 1.45,
+                color: isLight ? "#1e293b" : "#e0f0ff",
+                marginBottom: 8,
+              }}>
+                {content?.title}
+              </h2>
+              <p style={{ fontSize: 12, color: isLight ? "#64748b" : "rgba(255,255,255,0.45)", marginBottom: 22 }}>
+                {content?.subjects?.name}
+              </p>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <a
+                  href={content?.pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handleOpenPdf}
+                  className="wv-action-btn"
+                  style={{
+                    display: "block",
+                    padding: "13px 18px",
+                    background: isLight ? "rgba(2,132,199,0.1)" : "rgba(0,240,255,0.1)",
+                    border: isLight ? "1px solid rgba(2,132,199,0.4)" : "1px solid rgba(0,240,255,0.35)",
+                    borderRadius: 10,
+                    color: isLight ? "#0284c7" : "#00f0ff",
+                    textDecoration: "none",
+                    fontSize: 12,
+                    fontFamily: "'Orbitron', sans-serif",
+                    letterSpacing: 1,
+                  }}
+                >
+                  OPEN PDF IN BROWSER
+                </a>
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className="wv-action-btn"
+                  style={{
+                    padding: "13px 18px",
+                    minHeight: 46,
+                    background: "transparent",
+                    border: isLight ? "1px solid rgba(2,132,199,0.3)" : "1px solid rgba(0,240,255,0.25)",
+                    borderRadius: 10,
+                    color: isLight ? "#0284c7" : "#00f0ff",
+                    cursor: downloading ? "wait" : "pointer",
+                    fontSize: 12,
+                    fontFamily: "'Orbitron', sans-serif",
+                    letterSpacing: 1,
+                  }}
+                >
+                  {downloading ? "SAVING..." : downloaded ? "DOWNLOADED" : "DOWNLOAD PDF"}
+                </button>
+              </div>
+
+              <p style={{
+                marginTop: 16,
+                color: isLight ? "#64748b" : "rgba(255,255,255,0.35)",
+                fontSize: 11,
+                lineHeight: 1.6,
+              }}>
+                Mobile PDFs open best in your device's built-in viewer. You can still try the inline viewer below.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowInline(true)}
+                style={{
+                  marginTop: 8,
+                  background: "none",
+                  border: "none",
+                  color: isLight ? "#0284c7" : "#67e8f9",
+                  fontSize: 11,
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  padding: 8,
+                }}
+              >
+                Try inline viewer
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="wv-pdf-frame" style={{
+            width: "100%",
+            flex: 1,
+            minHeight: 0,
+            background: isLight ? "#EFE2C5" : "#1a1a2e",
+            transition: "background 0.3s ease",
+          }}>
+            <iframe
+              src={content?.pdf_url ? `${content.pdf_url}#toolbar=1&navpanes=0&view=FitH` : ""}
+              title={content?.title || "PDF Viewer"}
+              style={{ width: "100%", height: "100%", minHeight: "60vh", border: "none" }}
+            />
+          </div>
+        )}
+      </main>
     </div>
   );
 }

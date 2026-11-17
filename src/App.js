@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import ParticleBackground from "./components/ParticleBackground";
 import Header from "./components/Header";
 import Home from "./pages/Home";
+import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import PDFViewer from "./pages/PDFViewer";
@@ -12,7 +14,22 @@ import { useSession } from "./lib/useSession";
 
 function ProtectedRoute({ children }) {
   const session = useSession();
-  if (session === undefined) return null;
+  if (session === undefined) {
+    return (
+      <div role="status" aria-live="polite" style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#00f0ff",
+        fontFamily: "'Orbitron', sans-serif",
+        fontSize: 12,
+        letterSpacing: 2,
+      }}>
+        CHECKING ACCESS...
+      </div>
+    );
+  }
   return session ? children : <Navigate to="/admin/login" />;
 }
 
@@ -56,6 +73,7 @@ function MainLayout() {
     >
       <ParticleBackground />
       <InstallPwaPrompt />
+      <Analytics />
       <div key={location.pathname} className="wv-page-transition">
         <Routes>
           <Route path="/pdf/:id" element={<PDFViewer />} />
@@ -70,11 +88,20 @@ function MainLayout() {
             }
           />
           <Route
-            path="/*"
+            path="/"
             element={
               <>
                 <Header />
                 <Home />
+              </>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <>
+                <Header />
+                <NotFound />
               </>
             }
           />

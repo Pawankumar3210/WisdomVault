@@ -15,6 +15,7 @@ export default function ThemeToggle({ className = "", style = {} }) {
     <button
       type="button"
       aria-label={`Switch to ${isLight ? "dark" : "light"} mode`}
+      aria-pressed={isLight}
       title={`Switch to ${isLight ? "dark" : "light"} mode`}
       onClick={handleClick}
       className={`wv-theme-toggle ${className}`}

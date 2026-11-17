@@ -1,37 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
 import { useTheme } from "../context/ThemeContext";
+import { fetchVaultData } from "../lib/contentCache";
 import { scoreContent, scoreSubject, SEARCH_MIN_SCORE } from "../lib/search";
-
-let searchCache = { data: null, fetchedAt: 0 };
-const SEARCH_CACHE_TTL = 5 * 60 * 1000;
-
-export function clearSearchCache() {
-  searchCache = { data: null, fetchedAt: 0 };
-}
-
-async function fetchSearchData() {
-  if (searchCache.data && Date.now() - searchCache.fetchedAt < SEARCH_CACHE_TTL) {
-    return searchCache.data;
-  }
-
-  const [contentRes, subjectRes] = await Promise.all([
-    supabase
-      .from("content")
-      .select("id, title, type, subject_id, subjects(name, code)")
-      .order("created_at", { ascending: false }),
-    supabase.from("subjects").select("id, name, code"),
-  ]);
-
-  const data = {
-    contents: contentRes.data || [],
-    subjects: subjectRes.data || [],
-  };
-
-  searchCache = { data, fetchedAt: Date.now() };
-  return data;
-}
+import { trackEvent } from "../lib/analytics";
 
 export default function SearchBar() {
   const [query, setQuery] = useState("");
@@ -40,14 +12,16 @@ export default function SearchBar() {
   const [activeIndex, setActiveIndex] = useState(-1);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dataError, setDataError] = useState(false);
   const navigate = useNavigate();
   const ref = useRef(null);
   const inputRef = useRef(null);
+  const trackedZero = useRef("");
   const { isLight } = useTheme();
 
   useEffect(() => {
-    const handleClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) {
+    const handleClick = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) {
         setShowSuggestions(false);
         setActiveIndex(-1);
       }
@@ -57,7 +31,7 @@ export default function SearchBar() {
   }, []);
 
   useEffect(() => {
-    fetchSearchData().catch(() => {});
+    fetchVaultData().catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -67,23 +41,27 @@ export default function SearchBar() {
       setActiveIndex(-1);
       setSearched(false);
       setLoading(false);
+      setDataError(false);
       return;
     }
 
     setSearched(false);
+    setDataError(false);
     let cancelled = false;
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const data = await fetchSearchData();
+        const data = await fetchVaultData();
         if (cancelled) return;
 
         const term = query.trim();
 
-        const contentResults = data.contents
+        const contentMatches = data.contents
           .map(item => ({ item, score: scoreContent(term, item) }))
           .filter(result => result.score >= SEARCH_MIN_SCORE)
-          .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title))
+          .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title));
+
+        const contentResults = contentMatches
           .slice(0, 6)
           .map(({ item }) => ({
             id: item.id,
@@ -108,14 +86,20 @@ export default function SearchBar() {
 
         const results = [...contentResults, ...subjectResults];
         setSuggestions(results);
-        setShowSuggestions(results.length > 0);
+        setShowSuggestions(results.length > 0 && document.activeElement === inputRef.current);
         setActiveIndex(-1);
         setSearched(true);
+
+        if (results.length === 0 && trackedZero.current !== term) {
+          trackedZero.current = term;
+          trackEvent("search_zero_results", { query: term.slice(0, 80) });
+        }
       } catch {
         if (!cancelled) {
           setSuggestions([]);
           setShowSuggestions(false);
           setSearched(true);
+          setDataError(true);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -128,22 +112,23 @@ export default function SearchBar() {
     };
   }, [query]);
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Escape") {
+  const handleKeyDown = (event) => {
+    if (event.key === "Escape") {
       setShowSuggestions(false);
       setActiveIndex(-1);
       return;
     }
+
     if (!showSuggestions || suggestions.length === 0) return;
 
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
       setActiveIndex(index => (index + 1) % suggestions.length);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
       setActiveIndex(index => (index <= 0 ? suggestions.length - 1 : index - 1));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
+    } else if (event.key === "Enter") {
+      event.preventDefault();
       handleSelect(suggestions[activeIndex >= 0 ? activeIndex : 0]);
     }
   };
@@ -180,6 +165,12 @@ export default function SearchBar() {
   };
 
   const handleSelect = (item) => {
+    if (!item) return;
+    trackEvent("search_select", {
+      query: query.trim().slice(0, 80),
+      resultType: item.kind,
+      resultId: item.kind === "content" ? item.id : undefined,
+    });
     setShowSuggestions(false);
     setQuery("");
     setActiveIndex(-1);
@@ -190,13 +181,16 @@ export default function SearchBar() {
     }
   };
 
-  const showEmptyState =
-    !loading && searched && suggestions.length === 0 && query.trim().length >= 2;
+  const dropdownOpen = showSuggestions || (searched && suggestions.length === 0) || dataError;
 
   return (
     <div ref={ref} style={{ position: "relative", width: "100%", maxWidth: 600, margin: "0 auto" }}>
       <div style={{ position: "relative" }}>
+        <label htmlFor="vault-search" className="wv-sr-only">
+          Search notes, question banks, and papers
+        </label>
         <svg
+          aria-hidden="true"
           style={{
             position: "absolute",
             left: 16,
@@ -215,18 +209,24 @@ export default function SearchBar() {
 
         <input
           ref={inputRef}
+          id="vault-search"
           type="text"
+          role="combobox"
+          aria-expanded={dropdownOpen}
+          aria-controls={suggestions.length > 0 ? "vault-search-list" : undefined}
+          aria-autocomplete="list"
+          aria-activedescendant={activeIndex >= 0 ? `vault-search-option-${activeIndex}` : undefined}
           placeholder="Search notes, question banks, papers..."
           value={query}
-          onChange={e => setQuery(e.target.value)}
-          onFocus={e => {
-            e.target.style.borderColor = isLight
+          onChange={event => setQuery(event.target.value)}
+          onFocus={event => {
+            event.target.style.borderColor = isLight
               ? "rgba(2,132,199,0.7)"
               : "rgba(0,240,255,0.65)";
             if (suggestions.length > 0) setShowSuggestions(true);
           }}
-          onBlur={e => {
-            e.target.style.borderColor = isLight
+          onBlur={event => {
+            event.target.style.borderColor = isLight
               ? "rgba(2, 132, 199, 0.35)"
               : "rgba(0,240,255,0.3)";
           }}
@@ -257,11 +257,11 @@ export default function SearchBar() {
             aria-label="Clear search"
             style={{
               position: "absolute",
-              right: loading ? 42 : 14,
+              right: loading ? 46 : 10,
               top: "50%",
               transform: "translateY(-50%)",
-              width: 24,
-              height: 24,
+              width: 32,
+              height: 32,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -280,9 +280,10 @@ export default function SearchBar() {
 
         {loading && (
           <div
+            aria-hidden="true"
             style={{
               position: "absolute",
-              right: 16,
+              right: 18,
               top: "50%",
               transform: "translateY(-50%)",
               width: 16,
@@ -296,8 +297,19 @@ export default function SearchBar() {
         )}
       </div>
 
-      {(showSuggestions || showEmptyState) && (
+      <div className="wv-sr-only" role="status" aria-live="polite">
+        {loading
+          ? "Searching"
+          : searched && !dataError
+            ? `${suggestions.length} suggestions available`
+            : dataError
+              ? "Search is temporarily unavailable"
+              : ""}
+      </div>
+
+      {dropdownOpen && (
         <div
+          id="vault-search-results"
           className="wv-search-dropdown"
           style={{
             position: "absolute",
@@ -315,95 +327,110 @@ export default function SearchBar() {
               : "0 8px 32px rgba(0,0,0,0.5)",
           }}
         >
-          {showEmptyState ? (
-            <div
-              style={{
-                padding: "18px 16px",
-                textAlign: "center",
-                fontSize: 13,
-                color: isLight ? "#64748b" : "rgba(255,255,255,0.45)",
-              }}
-            >
+          {dataError ? (
+            <div role="alert" style={{
+              padding: "18px 16px",
+              textAlign: "center",
+              fontSize: 13,
+              color: isLight ? "#b91c1c" : "#ff9090",
+            }}>
+              Search is temporarily unavailable. Please try again.
+            </div>
+          ) : suggestions.length === 0 ? (
+            <div style={{
+              padding: "18px 16px",
+              textAlign: "center",
+              fontSize: 13,
+              color: isLight ? "#64748b" : "rgba(255,255,255,0.45)",
+            }}>
               No matches found for "{query.trim()}"
             </div>
           ) : (
-            suggestions.map((item, i) => (
-            <div
-              key={i}
-              onClick={() => handleSelect(item)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "12px 16px",
-                cursor: "pointer",
-                background: i === activeIndex
-                  ? (isLight ? "rgba(2,132,199,0.08)" : "rgba(0,240,255,0.08)")
-                  : "transparent",
-                borderBottom: i < suggestions.length - 1
-                  ? (isLight ? "1px solid rgba(2,132,199,0.1)" : "1px solid rgba(0,240,255,0.08)")
-                  : "none",
-                transition: "background 0.15s ease",
-              }}
-              onMouseEnter={() => setActiveIndex(i)}
-            >
-              <span
-                style={{
-                  fontSize: 9,
-                  fontWeight: 700,
-                  padding: "2px 7px",
-                  borderRadius: 4,
-                  color: getTypeColor(item.type),
-                  background: `${getTypeColor(item.type)}18`,
-                  border: `1px solid ${getTypeColor(item.type)}40`,
-                  fontFamily: "'Orbitron', sans-serif",
-                  letterSpacing: 1,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {getTypeLabel(item.type)}
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
+            <>
+              <div id="vault-search-list" role="listbox" aria-label="Search suggestions">
+              {suggestions.map((item, index) => (
                 <div
+                  key={`${item.kind}-${item.id}-${index}`}
+                  id={`vault-search-option-${index}`}
+                  role="option"
+                  aria-selected={index === activeIndex}
+                  onClick={() => handleSelect(item)}
                   style={{
-                    fontSize: 14,
-                    color: isLight ? "#1e293b" : "#e0f0ff",
-                    fontWeight: 500,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "12px 16px",
+                    cursor: "pointer",
+                    background: index === activeIndex
+                      ? (isLight ? "rgba(2,132,199,0.08)" : "rgba(0,240,255,0.08)")
+                      : "transparent",
+                    borderBottom: index < suggestions.length - 1
+                      ? (isLight ? "1px solid rgba(2,132,199,0.1)" : "1px solid rgba(0,240,255,0.08)")
+                      : "none",
+                    transition: "background 0.15s ease",
                   }}
+                  onMouseEnter={() => setActiveIndex(index)}
                 >
-                  {item.label}
-                </div>
-                {item.sublabel && (
-                  <div
+                  <span
                     style={{
-                      fontSize: 11,
-                      color: isLight ? "#0284c7" : "rgba(0,240,255,0.5)",
-                      marginTop: 2,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      padding: "2px 7px",
+                      borderRadius: 4,
+                      color: getTypeColor(item.type),
+                      background: `${getTypeColor(item.type)}18`,
+                      border: `1px solid ${getTypeColor(item.type)}40`,
+                      fontFamily: "'Orbitron', sans-serif",
+                      letterSpacing: 1,
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    {item.sublabel}
+                    {getTypeLabel(item.type)}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        color: isLight ? "#1e293b" : "#e0f0ff",
+                        fontWeight: 500,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {item.label}
+                    </div>
+                    {item.sublabel && (
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: isLight ? "#0284c7" : "rgba(0,240,255,0.5)",
+                          marginTop: 2,
+                        }}
+                      >
+                        {item.sublabel}
+                      </div>
+                    )}
                   </div>
-                )}
+                  <svg
+                    aria-hidden="true"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    style={{ opacity: isLight ? 0.6 : 0.3, flexShrink: 0 }}
+                  >
+                    <path
+                      d="M9 18l6-6-6-6"
+                      stroke={isLight ? "#0284c7" : "#00f0ff"}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+              ))}
               </div>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                style={{ opacity: isLight ? 0.6 : 0.3, flexShrink: 0 }}
-              >
-                <path
-                  d="M9 18l6-6-6-6"
-                  stroke={isLight ? "#0284c7" : "#00f0ff"}
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
-            ))
+            </>
           )}
         </div>
       )}
