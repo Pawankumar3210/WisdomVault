@@ -12,16 +12,17 @@ function getTypeColor(type, isLight) {
   return isLight ? "#0284c7" : "#00f0ff";
 }
 
-function LibraryCard({ item, timestamp, isLight, onRemove }) {
+function LibraryCard({ item, timestamp, isLight, onRemove, index = 0 }) {
   const color = getTypeColor(item.type, isLight);
 
   return (
-    <div style={{
+    <div className="wv-library-card" style={{
       position: "relative",
       minWidth: 0,
       background: isLight ? "rgba(244,235,206,0.9)" : "rgba(0,240,255,0.03)",
       border: isLight ? "1px solid rgba(2,132,199,0.18)" : "1px solid rgba(0,240,255,0.14)",
       borderRadius: 12,
+      animationDelay: `${Math.min(index, 5) * 55}ms`,
     }}>
       <Link
         to={`/pdf/${item.id}`}
@@ -88,6 +89,7 @@ function LibraryCard({ item, timestamp, isLight, onRemove }) {
           type="button"
           onClick={() => onRemove(item.id)}
           aria-label={`Remove ${item.title} from saved documents`}
+          className="wv-library-remove"
           style={{
             position: "absolute",
             top: 8,
@@ -119,7 +121,7 @@ function LibrarySection({ title, items, isLight, tone, onClear, onRemove }) {
 
   return (
     <section aria-labelledby={`library-${tone}`} style={{ marginBottom: 28 }}>
-      <h2 id={`library-${tone}`} style={{
+      <h2 id={`library-${tone}`} className="wv-library-heading" style={{
         margin: 0,
         marginBottom: onClear ? 8 : 10,
         color: isLight ? "#0284c7" : "#67e8f9",
@@ -162,13 +164,14 @@ function LibrarySection({ title, items, isLight, tone, onClear, onRemove }) {
         gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
         gap: 10,
       }}>
-        {items.map(({ item, timestamp }) => (
+        {items.map(({ item, timestamp }, index) => (
           <LibraryCard
             key={item.id}
             item={item}
             timestamp={timestamp}
             isLight={isLight}
             onRemove={onRemove}
+            index={index}
           />
         ))}
       </div>

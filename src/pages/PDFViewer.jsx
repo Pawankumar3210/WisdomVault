@@ -31,7 +31,7 @@ export default function PDFViewer() {
   const [downloaded, setDownloaded] = useState(false);
   const [downloadError, setDownloadError] = useState("");
   const [isMobile, setIsMobile] = useState(isMobilePdfEnvironment);
-  const [showInline, setShowInline] = useState(false);
+  const [pdfLoaded, setPdfLoaded] = useState(false);
   const [metadata, setMetadata] = useState({ fileSize: null, pageCount: null });
   const [lastViewedAt, setLastViewedAt] = useState(null);
   const [shareNotice, setShareNotice] = useState(null);
@@ -80,6 +80,13 @@ export default function PDFViewer() {
   }, [content]);
 
   useEffect(() => {
+    if (!content?.pdf_url) return undefined;
+    const timer = setTimeout(() => setPdfLoaded(true), 4000);
+    return () => clearTimeout(timer);
+  }, [content?.pdf_url]);
+
+  useEffect(() => {
+    setPdfLoaded(false);
     setMetadata({ fileSize: null, pageCount: null });
     if (!content?.pdf_url) return undefined;
 
@@ -227,14 +234,6 @@ export default function PDFViewer() {
     }
   };
 
-  const handleOpenPdf = () => {
-    if (!content?.pdf_url) return;
-    trackEvent("pdf_open_external", {
-      type: content.type,
-      subject: content.subjects?.name || "",
-    });
-  };
-
   if (loading) return <FuturisticLoader text="LOADING DOCUMENT" />;
 
   if (error) {
@@ -366,7 +365,7 @@ export default function PDFViewer() {
             onClick={handleBookmark}
             aria-label={bookmarked ? "Remove from saved documents" : "Save for later"}
             aria-pressed={bookmarked}
-            className="wv-action-btn"
+            className="wv-action-btn wv-pdf-icon-btn"
             style={{
               width: 40,
               height: 40,
@@ -392,7 +391,7 @@ export default function PDFViewer() {
             type="button"
             onClick={handleShare}
             aria-label="Share this document"
-            className="wv-action-btn"
+            className="wv-action-btn wv-pdf-icon-btn"
             style={{
               width: 40,
               height: 40,
@@ -477,198 +476,27 @@ export default function PDFViewer() {
 
       <main id="main-content" tabIndex={-1} style={{ flex: 1, minHeight: 0, display: "flex" }}>
         <h1 className="wv-sr-only">{content?.title}</h1>
-        {isMobile && !showInline ? (
-          <div style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "28px 18px",
-            background: isLight ? "#EFE2C5" : "#101024",
-          }}>
-            <div style={{
-              width: "100%",
-              maxWidth: 420,
-              textAlign: "center",
-              padding: 26,
-              background: isLight ? "rgba(250,243,224,0.98)" : "rgba(8,8,30,0.96)",
-              border: isLight ? "1px solid rgba(2,132,199,0.25)" : "1px solid rgba(0,240,255,0.2)",
-              borderRadius: 18,
-              boxShadow: isLight ? "0 12px 36px rgba(0,0,0,0.1)" : "0 0 40px rgba(0,240,255,0.08)",
-            }}>
-              <div aria-hidden="true" style={{ fontSize: 46, marginBottom: 12 }}>📄</div>
-              <div style={{
-                fontSize: 10,
-                color: typeColor,
-                fontFamily: "'Orbitron', sans-serif",
-                letterSpacing: 2,
-                marginBottom: 8,
-              }}>
-                {getTypeLabel(content?.type)}
-              </div>
-              <h2 style={{
-                fontSize: 18,
-                lineHeight: 1.45,
-                color: isLight ? "#1e293b" : "#e0f0ff",
-                marginBottom: 8,
-              }}>
-                {content?.title}
-              </h2>
-              <p style={{
-                fontSize: 12,
-                color: isLight ? "#64748b" : "rgba(255,255,255,0.45)",
-                marginBottom: metadataParts.length || lastViewedAt ? 10 : 22,
-              }}>
-                {content?.subjects?.name}
-              </p>
-
-              {(metadataParts.length > 0 || lastViewedAt) && (
-                <div style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  justifyContent: "center",
-                  gap: "6px 14px",
-                  marginBottom: 22,
-                  color: isLight ? "#0284c7" : "rgba(0,240,255,0.65)",
-                  fontSize: 10.5,
-                  fontFamily: "'Orbitron', sans-serif",
-                  letterSpacing: 0.5,
-                }}>
-                  {metadataParts.map(part => <span key={part}>{part}</span>)}
-                  {lastViewedAt && <span>LAST OPENED {formatRelativeTime(lastViewedAt).toUpperCase()}</span>}
-                </div>
-              )}
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <a
-                  href={content?.pdf_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={handleOpenPdf}
-                  className="wv-action-btn"
-                  style={{
-                    display: "block",
-                    padding: "13px 18px",
-                    background: isLight ? "rgba(2,132,199,0.1)" : "rgba(0,240,255,0.1)",
-                    border: isLight ? "1px solid rgba(2,132,199,0.4)" : "1px solid rgba(0,240,255,0.35)",
-                    borderRadius: 10,
-                    color: isLight ? "#0284c7" : "#00f0ff",
-                    textDecoration: "none",
-                    fontSize: 12,
-                    fontFamily: "'Orbitron', sans-serif",
-                    letterSpacing: 1,
-                  }}
-                >
-                  OPEN PDF IN BROWSER
-                </a>
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  disabled={downloading}
-                  className="wv-action-btn"
-                  style={{
-                    padding: "13px 18px",
-                    minHeight: 46,
-                    background: "transparent",
-                    border: isLight ? "1px solid rgba(2,132,199,0.3)" : "1px solid rgba(0,240,255,0.25)",
-                    borderRadius: 10,
-                    color: isLight ? "#0284c7" : "#00f0ff",
-                    cursor: downloading ? "wait" : "pointer",
-                    fontSize: 12,
-                    fontFamily: "'Orbitron', sans-serif",
-                    letterSpacing: 1,
-                  }}
-                >
-                  {downloading ? "SAVING..." : downloaded ? "DOWNLOADED" : "DOWNLOAD PDF"}
-                </button>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={handleBookmark}
-                    aria-pressed={bookmarked}
-                    className="wv-action-btn"
-                    style={{
-                      flex: 1,
-                      minHeight: 44,
-                      padding: "11px 10px",
-                      background: bookmarked
-                        ? (isLight ? "rgba(2,132,199,0.14)" : "rgba(0,240,255,0.12)")
-                        : "transparent",
-                      border: isLight ? "1px solid rgba(2,132,199,0.3)" : "1px solid rgba(0,240,255,0.25)",
-                      borderRadius: 10,
-                      color: isLight ? "#0284c7" : "#00f0ff",
-                      cursor: "pointer",
-                      fontSize: 10.5,
-                      fontFamily: "'Orbitron', sans-serif",
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    {bookmarked ? "REMOVE FROM SAVED" : "SAVE FOR LATER"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleShare}
-                    className="wv-action-btn"
-                    style={{
-                      flex: "0 0 96px",
-                      minHeight: 44,
-                      padding: "11px 10px",
-                      background: "transparent",
-                      border: isLight ? "1px solid rgba(2,132,199,0.3)" : "1px solid rgba(0,240,255,0.25)",
-                      borderRadius: 10,
-                      color: isLight ? "#0284c7" : "#00f0ff",
-                      cursor: "pointer",
-                      fontSize: 10.5,
-                      fontFamily: "'Orbitron', sans-serif",
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    SHARE
-                  </button>
-                </div>
-              </div>
-
-              <p style={{
-                marginTop: 16,
-                color: isLight ? "#64748b" : "rgba(255,255,255,0.35)",
-                fontSize: 11,
-                lineHeight: 1.6,
-              }}>
-                Mobile PDFs open best in your device's built-in viewer. You can still try the inline viewer below.
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowInline(true)}
-                style={{
-                  marginTop: 8,
-                  background: "none",
-                  border: "none",
-                  color: isLight ? "#0284c7" : "#67e8f9",
-                  fontSize: 11,
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                  padding: 8,
-                }}
-              >
-                Try inline viewer
-              </button>
+        <div className="wv-pdf-frame" style={{
+          width: "100%",
+          flex: 1,
+          minHeight: 0,
+          background: isLight ? "#EFE2C5" : "#1a1a2e",
+          transition: "background 0.3s ease",
+        }}>
+          {!pdfLoaded && (
+            <div className="wv-pdf-loading" role="status" aria-label="Opening document">
+              <span className="wv-pdf-loading-spinner" aria-hidden="true" />
+              <span className="wv-pdf-loading-text">OPENING DOCUMENT</span>
             </div>
-          </div>
-        ) : (
-          <div className="wv-pdf-frame" style={{
-            width: "100%",
-            flex: 1,
-            minHeight: 0,
-            background: isLight ? "#EFE2C5" : "#1a1a2e",
-            transition: "background 0.3s ease",
-          }}>
-            <iframe
-              src={content?.pdf_url ? `${content.pdf_url}#toolbar=1&navpanes=0&view=FitH` : ""}
-              title={content?.title || "PDF Viewer"}
-              style={{ width: "100%", height: "100%", minHeight: "60vh", border: "none" }}
-            />
-          </div>
-        )}
+          )}
+          <iframe
+            className={`wv-pdf-embed${pdfLoaded ? " wv-pdf-embed-ready" : ""}`}
+            src={content?.pdf_url ? `${content.pdf_url}#page=1&zoom=125&toolbar=1&navpanes=0` : ""}
+            title={content?.title || "PDF Viewer"}
+            onLoad={() => setPdfLoaded(true)}
+            style={{ width: "100%", height: "100%", minHeight: "60vh", border: "none" }}
+          />
+        </div>
       </main>
 
       <div className="wv-sr-only" role="status" aria-live="polite">
